@@ -2,7 +2,6 @@ package gojson2sql
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 	"testing"
 
@@ -880,8 +879,6 @@ func TestGenerateJsonToSql(t *testing.T) {
 
 	jql := NewJson2Sql([]byte(jsonData))
 	sql, filter, _ := jql.Generate()
-
-	fmt.Println(sql, filter)
 
 	strExpectation := "SELECT users.id, users.name, users.birthdate, gender.gender_name FROM users LEFT JOIN role ON users.id = role.user_id LEFT JOIN gender ON users.gender_id = gender.id WHERE gender.gender_name = ? users.id = ? AND transaction.total > sum(?) OR (users.birthdate BETWEEN ? AND ? AND users.status = ?) GROUP BY users.id HAVING COUNT(users.id) > ? ORDER BY users.id, gender.id ASC"
 	assert.Equal(t, strExpectation, sql)
