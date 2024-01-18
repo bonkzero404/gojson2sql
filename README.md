@@ -6,6 +6,17 @@
 
 GoJson2SQL is a library for composing SQL queries using JSON. A JSON file is transformed into an SQL string. This library facilitates the process of generating SQL statements by utilizing a structured JSON format, enhancing the readability and simplicity of SQL query construction.
 
+## Limitations
+
+Currently, it can only perform select queries.
+
+## TODO:
+
+- Implement Union queries
+- Insert Query
+- Validate SQL Syntax
+- ?
+
 ## Installation
 
 ```
