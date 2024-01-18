@@ -562,7 +562,11 @@ coverage: 100.0% of statements
 
 ## Benchmarking
 
-In this benchmarking process, I used a 2020 MacBook Pro M1 with an 8-core processor (arm64) and 8GB of RAM. The following are the benchmark results obtained on my MacBook.
+Specs:
+
+-   MacBook Pro M1 (2020)
+-   8-Cores (arm64)
+-   8GB of RAM
 
 ```go
 > go test -bench=. -benchmem
