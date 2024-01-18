@@ -3,6 +3,7 @@ package gojson2sql
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -41,16 +42,23 @@ func TestRawJson_Error(t *testing.T) {
 }
 
 func TestMaskedQueryValue(t *testing.T) {
-	strTest := `SELECT * FROM test WHERE v1 = JQL_VALUE:'A' AND v2 = JQL_VALUE:'B'`
+	strTest := `SELECT * FROM test WHERE v1 = JQL_VALUE:'A':END_JQL_VALUE AND v2 = JQL_VALUE:'B':END_JQL_VALUE AND v3 = JQL_VALUE:true:END_JQL_VALUE AND v4 = JQL_VALUE:CURRENT_TIME:END_JQL_VALUE AND v5 = JQL_VALUE:123:END_JQL_VALUE`
 
-	strExpected := `SELECT * FROM test WHERE v1 = ? AND v2 = ?`
-	arrStrLengthExpected := 2
+	strExpected := `SELECT * FROM test WHERE v1 = ? AND v2 = ? AND v3 = ? AND v4 = ? AND v5 = ?`
+	arrStrLengthExpected := 5
 
 	jql := Json2Sql{}
 	str, astr := jql.MaskedQueryValue(strTest)
 
 	assert.Equal(t, strExpected, str)
 	assert.Equal(t, arrStrLengthExpected, len(astr))
+
+	// Assert Datatype
+	assert.Equal(t, "string", reflect.TypeOf(astr[0]).String())
+	assert.Equal(t, "string", reflect.TypeOf(astr[1]).String())
+	assert.Equal(t, "bool", reflect.TypeOf(astr[2]).String())
+	assert.Equal(t, "string", reflect.TypeOf(astr[3]).String())
+	assert.Equal(t, "float64", reflect.TypeOf(astr[4]).String())
 }
 
 func TestGenerateSelectFrom(t *testing.T) {
@@ -95,21 +103,6 @@ func TestGenerateSelectFrom_Selection(t *testing.T) {
 				"alias":"user",
 				"subquery": {
 					"table": "users",
-					"conditions": [
-						{
-							"datatype": "NUMBER",
-							"clause": "id",
-							"operator": "=",
-							"value": 1
-						}
-					],
-					"limit": 1
-				}
-			},
-			{
-				"alias":"user",
-				"subquery": {
-					"table": "users",
 					"selectFields": [],
 					"conditions": [
 						{
@@ -124,7 +117,7 @@ func TestGenerateSelectFrom_Selection(t *testing.T) {
 			}
 		]
 	}`
-	strExpected := `SELECT a, b, c, d AS e, (SELECT id, name FROM users WHERE id = 1) AS user, (SELECT * FROM users WHERE id = 1) AS user, (SELECT * FROM users WHERE id = 1) AS user FROM test`
+	strExpected := `SELECT a, b, c, d AS e, (SELECT id, name FROM users WHERE id = JQL_VALUE:1:END_JQL_VALUE LIMIT 1) AS user, (SELECT * FROM users WHERE id = JQL_VALUE:1:END_JQL_VALUE LIMIT 1) AS user FROM test`
 
 	jql, _ := NewJson2Sql([]byte(strTest))
 	str := jql.GenerateSelectFrom()
@@ -220,7 +213,7 @@ func TestGenerateSelectFrom_CaseWhenThen(t *testing.T) {
 			}
 		]
 	}`
-	strExpected := `SELECT CASE WHEN a > 100 THEN true WHEN b > 200 THEN 10 WHEN c > count(a.field) THEN sum(1000) WHEN c > 'A' THEN (SELECT * FROM users WHERE id = 1) ELSE 'NICE' END AS field_alias FROM test`
+	strExpected := `SELECT CASE WHEN a > 100 THEN true WHEN b > 200 THEN 10 WHEN c > count(a.field) THEN sum(1000) WHEN c > 'A' THEN (SELECT * FROM users WHERE id = JQL_VALUE:1:END_JQL_VALUE LIMIT 1) ELSE 'NICE' END AS field_alias FROM test`
 
 	jql, _ := NewJson2Sql([]byte(strTest))
 	str := jql.GenerateSelectFrom()
@@ -270,7 +263,7 @@ func TestGenerateSelectFrom_CaseDefaultValueSub(t *testing.T) {
 			}
 		]
 	}`
-	strExpected := `SELECT CASE WHEN a > 100 THEN true ELSE (SELECT * FROM users WHERE id = 1) END AS field_alias FROM test`
+	strExpected := `SELECT CASE WHEN a > 100 THEN true ELSE (SELECT * FROM users WHERE id = JQL_VALUE:1:END_JQL_VALUE LIMIT 1) END AS field_alias FROM test`
 
 	jql, _ := NewJson2Sql([]byte(strTest))
 	str := jql.GenerateSelectFrom()
@@ -298,7 +291,7 @@ func TestSqlLikeAndBlankDatatype(t *testing.T) {
 		}
 	`
 
-	strExpected := `WHERE a LIKE JQL_VALUE:'%lorem ipsum%' b =`
+	strExpected := `WHERE a LIKE JQL_VALUE:'%lorem ipsum%':END_JQL_VALUE b =`
 	jql, _ := NewJson2Sql([]byte(sqlTest))
 	str := jql.GenerateWhere()
 
@@ -326,7 +319,7 @@ func TestSqlLikeWithOperand(t *testing.T) {
 		}
 	`
 
-	strExpected := `WHERE b = JQL_VALUE:'lorem ipsum' AND a ILIKE JQL_VALUE:'%lorem ipsum%'`
+	strExpected := `WHERE b = JQL_VALUE:'lorem ipsum':END_JQL_VALUE AND a ILIKE JQL_VALUE:'%lorem ipsum%':END_JQL_VALUE`
 	jql, _ := NewJson2Sql([]byte(sqlTest))
 	str := jql.GenerateWhere()
 
@@ -339,7 +332,6 @@ func TestBetweenWithOperand(t *testing.T) {
 			"conditions": [
 				{
 					"clause": "a",
-					"operand": "and",
 					"datatype": "NUMBER",
 					"operator": "BETWEEN",
 					"value": {
@@ -351,7 +343,7 @@ func TestBetweenWithOperand(t *testing.T) {
 		}
 	`
 
-	strExpected := `WHERE AND a BETWEEN JQL_VALUE:1 AND JQL_VALUE:2`
+	strExpected := `WHERE a BETWEEN JQL_VALUE:1:END_JQL_VALUE AND JQL_VALUE:2:END_JQL_VALUE`
 	jql, _ := NewJson2Sql([]byte(sqlTest))
 	str := jql.GenerateWhere()
 
@@ -376,7 +368,7 @@ func TestCompositeWithoutOperand(t *testing.T) {
 		}
 	`
 
-	strExpected := `WHERE (a = JQL_VALUE:'b')`
+	strExpected := `WHERE (a = JQL_VALUE:'b':END_JQL_VALUE)`
 	jql, _ := NewJson2Sql([]byte(sqlTest))
 	str := jql.GenerateWhere()
 
@@ -536,7 +528,7 @@ func TestGenerateHaving(t *testing.T) {
 			}
 		]
 	}`
-	strExpected := `HAVING COUNT(a) > JQL_VALUE:100 AND SUM(a) > JQL_VALUE:100`
+	strExpected := `HAVING COUNT(a) > JQL_VALUE:100:END_JQL_VALUE AND SUM(a) > JQL_VALUE:100:END_JQL_VALUE`
 
 	jql, _ := NewJson2Sql([]byte(strTest))
 	str := jql.GenerateHaving()
@@ -572,7 +564,7 @@ func TestGenerateWhere(t *testing.T) {
 			}
 		]
 	}`
-	strExpected := `WHERE a = JQL_VALUE:'b' users.birthdate BETWEEN JQL_VALUE:'2015-01-01' AND JQL_VALUE:'2021-01-01' AND c = JQL_VALUE:'d'`
+	strExpected := `WHERE a = JQL_VALUE:'b':END_JQL_VALUE users.birthdate BETWEEN JQL_VALUE:'2015-01-01':END_JQL_VALUE AND JQL_VALUE:'2021-01-01':END_JQL_VALUE AND c = JQL_VALUE:'d':END_JQL_VALUE`
 
 	jql, _ := NewJson2Sql([]byte(strTest))
 	str := jql.GenerateWhere()
@@ -633,7 +625,7 @@ func TestGenerateConditions(t *testing.T) {
 		]
 	}
 	`
-	strExpected := `users.id = JQL_VALUE:1 AND gender.gender_name = JQL_VALUE:'female' AND transaction.total > sum(JQL_VALUE:100) OR (users.birthdate BETWEEN JQL_VALUE:'2015-01-01' AND JQL_VALUE:'2021-01-01' AND users.status = JQL_VALUE:'active')`
+	strExpected := `users.id = JQL_VALUE:1:END_JQL_VALUE AND gender.gender_name = JQL_VALUE:'female':END_JQL_VALUE AND transaction.total > sum(JQL_VALUE:100:END_JQL_VALUE) OR (users.birthdate BETWEEN JQL_VALUE:'2015-01-01':END_JQL_VALUE AND JQL_VALUE:'2021-01-01':END_JQL_VALUE AND users.status = JQL_VALUE:'active':END_JQL_VALUE)`
 
 	jql, _ := NewJson2Sql([]byte(strTest))
 	str := jql.GenerateConditions()
@@ -667,7 +659,7 @@ func TestGenerateConditions_SubQuery(t *testing.T) {
 		]
 	}
 	`
-	strExpected := `users.id = (SELECT * FROM users WHERE id = 1)`
+	strExpected := `users.id = (SELECT * FROM users WHERE id = JQL_VALUE:1:END_JQL_VALUE LIMIT 1)`
 
 	jql, _ := NewJson2Sql([]byte(strTest))
 	str := jql.GenerateConditions()
@@ -678,47 +670,68 @@ func TestGenerateConditions_SubQuery(t *testing.T) {
 func TestBuildJsonToSql(t *testing.T) {
 	jsonData := `
 		{
-			"table": "users",
+			"table": "table_1",
 			"selectFields": [
-				"users.id",
-				"users.name",
-				"users.birthdate",
-				"gender.gender_name"
+				"table_1.a",
+				{
+					"field": "table_1.b",
+					"alias": "foo_bar"
+				},
+				{
+					"field": "table_2.a",
+					"alias": "baz",
+					"subquery": {
+						"table": "table_4",
+						"selectFields": ["*"],
+						"conditions": [
+							{
+								"datatype": "number",
+								"clause": "a",
+								"operator": "=",
+								"value": 1
+							}
+						],
+						"limit": 1
+					}
+				},
+				"table_2.b",
+				"table_3.a",
+				"table_3.b"
 			],
 			"join": [
 				{
-					"table": "role",
-					"type": "left",
+					"table": "table_2",
+					"type": "join",
 					"on": {
-						"users.id": "role.user_id"
+						"table_2.a": "table_1.a"
 					}
 				},
 				{
-					"table": "gender",
+					"table": "table_3",
 					"type": "left",
 					"on": {
-						"users.gender_id": "gender.id"
+						"table_3.a": "table_2.a"
 					}
 				}
 			],
 			"conditions": [
 				{
-					"clause": "users.id",
+					"datatype": "string",
+					"clause": "table_1.a",
 					"operator": "=",
-					"datatype": "number",
-					"value": 1
+					"value": "foo"
 				},
 				{
 					"operand": "and",
-					"datatype": "string",
-					"clause": "gender.gender_name",
+					"datatype": "boolean",
+					"clause": "table_1.b",
 					"operator": "=",
-					"value": "female"
+					"value": true
 				},
 				{
 					"operand": "and",
 					"datatype": "function",
-					"clause": "transaction.total",
+					"clause": "table_2.a",
 					"operator": ">",
 					"value": {
 						"sqlFunc": {
@@ -728,29 +741,49 @@ func TestBuildJsonToSql(t *testing.T) {
 					}
 				},
 				{
+					"operand": "and",
+					"clause": "table_2.b",
+					"operator": "=",
+					"value": {
+						"subquery": {
+							"table": "table_4",
+							"selectFields": ["*"],
+							"conditions": [
+								{
+									"datatype": "number",
+									"clause": "a",
+									"operator": "=",
+									"value": 1
+								}
+							],
+							"limit": 1
+						}
+					}
+				},
+				{
 					"operand": "or",
 					"composite": [
 						{
-							"clause": "users.birthdate",
+							"clause": "table_3.a",
 							"datatype": "string",
 							"operator": "between",
 							"value": {
-								"from": "2015-01-01",
-								"to": "2021-01-01"
+								"from": "2020-01-01",
+								"to": "2023-01-01"
 							}
 						},
 						{
 							"operand": "and",
-							"datatype": "string",
-							"clause": "users.status",
+							"datatype": "number",
+							"clause": "table_3.b",
 							"operator": "=",
-							"value": "active"
+							"value": 2
 						}
 					]
 				}
 			],
 			"groupBy": {
-				"fields": ["users.id"]
+				"fields": ["table_1.a"]
 			},
 			"having": [
 				{
@@ -758,7 +791,7 @@ func TestBuildJsonToSql(t *testing.T) {
 						"sqlFunc": {
 							"name": "count",
 							"isField": true,
-							"params": ["users.id"]
+							"params": ["table_2.a"]
 						}
 					},
 					"datatype": "number",
@@ -767,63 +800,86 @@ func TestBuildJsonToSql(t *testing.T) {
 				}
 			],
 			"orderBy": {
-				"fields": ["users.id", "gender.id"],
+				"fields": ["table_1.a", "table_2.a"],
 				"sort": "asc"
 			},
-			"limit": 1
+			"limit": 1,
+			"offset": 0 
 		}
 	`
 
 	jql, _ := NewJson2Sql([]byte(jsonData))
 	sql := jql.Build()
 
-	strExpectation := "SELECT users.id, users.name, users.birthdate, gender.gender_name FROM users LEFT JOIN role ON users.id = role.user_id LEFT JOIN gender ON users.gender_id = gender.id WHERE users.id = 1 AND gender.gender_name = 'female' AND transaction.total > sum(100) OR (users.birthdate BETWEEN '2015-01-01' AND '2021-01-01' AND users.status = 'active') GROUP BY users.id HAVING COUNT(users.id) > 10 ORDER BY users.id, gender.id ASC"
+	strExpectation := "SELECT table_1.a, table_1.b AS foo_bar, (SELECT * FROM table_4 WHERE a = 1 LIMIT 1) AS baz, table_2.b, table_3.a, table_3.b FROM table_1 JOIN table_2 ON table_2.a = table_1.a LEFT JOIN table_3 ON table_3.a = table_2.a WHERE table_1.a = 'foo' AND table_1.b = true AND table_2.a > sum(100) AND table_2.b = (SELECT * FROM table_4 WHERE a = 1 LIMIT 1) OR (table_3.a BETWEEN '2020-01-01' AND '2023-01-01' AND table_3.b = 2) GROUP BY table_1.a HAVING COUNT(table_2.a) > 10 ORDER BY table_1.a, table_2.a ASC LIMIT 1 OFFSET 0"
 	assert.Equal(t, strExpectation, sql)
 }
 
 func TestGenerateJsonToSql(t *testing.T) {
 	jsonData := `
 		{
-			"table": "users",
+			"table": "table_1",
 			"selectFields": [
-				"users.id",
-				"users.name",
-				"users.birthdate",
-				"gender.gender_name"
+				"table_1.a",
+				{
+					"field": "table_1.b",
+					"alias": "foo_bar"
+				},
+				{
+					"field": "table_2.a",
+					"alias": "baz",
+					"subquery": {
+						"table": "table_4",
+						"selectFields": ["*"],
+						"conditions": [
+							{
+								"datatype": "number",
+								"clause": "a",
+								"operator": "=",
+								"value": 1
+							}
+						],
+						"limit": 1
+					}
+				},
+				"table_2.b",
+				"table_3.a",
+				"table_3.b"
 			],
 			"join": [
 				{
-					"table": "role",
-					"type": "left",
+					"table": "table_2",
+					"type": "join",
 					"on": {
-						"users.id": "role.user_id"
+						"table_2.a": "table_1.a"
 					}
 				},
 				{
-					"table": "gender",
+					"table": "table_3",
 					"type": "left",
 					"on": {
-						"users.gender_id": "gender.id"
+						"table_3.a": "table_2.a"
 					}
 				}
 			],
 			"conditions": [
 				{
 					"datatype": "string",
-					"clause": "gender.gender_name",
+					"clause": "table_1.a",
 					"operator": "=",
-					"value": "female"
+					"value": "foo"
 				},
 				{
-					"clause": "users.id",
-					"datatype": "number",
+					"operand": "and",
+					"datatype": "boolean",
+					"clause": "table_1.b",
 					"operator": "=",
-					"value": 1
+					"value": true
 				},
 				{
 					"operand": "and",
 					"datatype": "function",
-					"clause": "transaction.total",
+					"clause": "table_2.a",
 					"operator": ">",
 					"value": {
 						"sqlFunc": {
@@ -833,29 +889,49 @@ func TestGenerateJsonToSql(t *testing.T) {
 					}
 				},
 				{
+					"operand": "and",
+					"clause": "table_2.b",
+					"operator": "=",
+					"value": {
+						"subquery": {
+							"table": "table_4",
+							"selectFields": ["*"],
+							"conditions": [
+								{
+									"datatype": "number",
+									"clause": "a",
+									"operator": "=",
+									"value": 1
+								}
+							],
+							"limit": 1
+						}
+					}
+				},
+				{
 					"operand": "or",
 					"composite": [
 						{
-							"clause": "users.birthdate",
+							"clause": "table_3.a",
 							"datatype": "string",
 							"operator": "between",
 							"value": {
-								"from": "2015-01-01",
-								"to": "2021-01-01"
+								"from": "2020-01-01",
+								"to": "2023-01-01"
 							}
 						},
 						{
 							"operand": "and",
 							"datatype": "string",
-							"clause": "users.status",
+							"clause": "table_3.b",
 							"operator": "=",
-							"value": "active"
+							"value": "2"
 						}
 					]
 				}
 			],
 			"groupBy": {
-				"fields": ["users.id"]
+				"fields": ["table_1.a"]
 			},
 			"having": [
 				{
@@ -863,7 +939,7 @@ func TestGenerateJsonToSql(t *testing.T) {
 						"sqlFunc": {
 							"name": "count",
 							"isField": true,
-							"params": ["users.id"]
+							"params": ["table_2.a"]
 						}
 					},
 					"datatype": "number",
@@ -872,17 +948,20 @@ func TestGenerateJsonToSql(t *testing.T) {
 				}
 			],
 			"orderBy": {
-				"fields": ["users.id", "gender.id"],
+				"fields": ["table_1.a", "table_2.a"],
 				"sort": "asc"
 			},
-			"limit": 1
+			"limit": 1,
+			"offset": 0 
 		}
 	`
 
 	jql, _ := NewJson2Sql([]byte(jsonData))
 	sql, filter, _ := jql.Generate()
 
-	strExpectation := "SELECT users.id, users.name, users.birthdate, gender.gender_name FROM users LEFT JOIN role ON users.id = role.user_id LEFT JOIN gender ON users.gender_id = gender.id WHERE gender.gender_name = ? users.id = ? AND transaction.total > sum(?) OR (users.birthdate BETWEEN ? AND ? AND users.status = ?) GROUP BY users.id HAVING COUNT(users.id) > ? ORDER BY users.id, gender.id ASC"
+	fmt.Println(sql, filter)
+
+	strExpectation := "SELECT table_1.a, table_1.b AS foo_bar, (SELECT * FROM table_4 WHERE a = ? LIMIT 1) AS baz, table_2.b, table_3.a, table_3.b FROM table_1 JOIN table_2 ON table_2.a = table_1.a LEFT JOIN table_3 ON table_3.a = table_2.a WHERE table_1.a = ? AND table_1.b = ? AND table_2.a > sum(?) AND table_2.b = (SELECT * FROM table_4 WHERE a = ? LIMIT 1) OR (table_3.a BETWEEN ? AND ? AND table_3.b = ?) GROUP BY table_1.a HAVING COUNT(table_2.a) > ? ORDER BY table_1.a, table_2.a ASC LIMIT 1 OFFSET 0"
 	assert.Equal(t, strExpectation, sql)
-	assert.Equal(t, []string{"female", "1", "100", "2015-01-01", "2021-01-01", "active", "10"}, filter)
+	assert.Equal(t, []interface{}{float64(1), "foo", true, float64(100), float64(1), "2020-01-01", "2023-01-01", "2", float64(10)}, filter)
 }

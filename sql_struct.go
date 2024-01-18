@@ -27,7 +27,8 @@ type SQLJson struct {
 		Fields []string `json:"fields"`
 		Sort   *string  `json:"sort"`
 	} `json:"orderBy"`
-	Limit *int `json:"limit"`
+	Limit  *int `json:"limit"`
+	Offset *int `json:"offset"`
 }
 
 type Join struct {

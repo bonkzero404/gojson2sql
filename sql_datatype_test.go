@@ -59,11 +59,11 @@ func TestCheckArrayType(t *testing.T) {
 }
 
 func TestArrayConversionToStringExpression(t *testing.T) {
-	if ArrayConversionToStringExpression([]byte("[\"1\", \"2\"]"), false) != "JQL_VALUE:'1', JQL_VALUE:'2'" {
-		t.Error("Expected \"JQL_VALUE:'1', JQL_VALUE:'2'\", got", ArrayConversionToStringExpression([]byte("[\"1\", \"2\"]"), false))
+	if ArrayConversionToStringExpression([]byte("[\"1\", \"2\"]"), false) != "JQL_VALUE:'1':END_JQL_VALUE, JQL_VALUE:'2':END_JQL_VALUE" {
+		t.Error("Expected \"JQL_VALUE:'1':END_JQL_VALUE, JQL_VALUE:'2':END_JQL_VALUE\", got", ArrayConversionToStringExpression([]byte("[\"1\", \"2\"]"), false))
 	}
-	if ArrayConversionToStringExpression([]byte("[1, 2]"), false) != "JQL_VALUE:1, JQL_VALUE:2" {
-		t.Error("Expected \"JQL_VALUE:1, JQL_VALUE:2\", got", ArrayConversionToStringExpression([]byte("[1, 2]"), false))
+	if ArrayConversionToStringExpression([]byte("[1, 2]"), false) != "JQL_VALUE:1:END_JQL_VALUE, JQL_VALUE:2:END_JQL_VALUE" {
+		t.Error("Expected \"JQL_VALUE:1:END_JQL_VALUE, JQL_VALUE:2:END_JQL_VALUE\", got", ArrayConversionToStringExpression([]byte("[1, 2]"), false))
 	}
 	if ArrayConversionToStringExpression([]byte("1"), false) != "" {
 		t.Error("Expected \"\", got", ArrayConversionToStringExpression([]byte("1"), false))
@@ -71,30 +71,30 @@ func TestArrayConversionToStringExpression(t *testing.T) {
 }
 
 func TestExtractValueByDataType(t *testing.T) {
-	if ExtractValueByDataType("BOOLEAN", []byte("true"), false) != "JQL_VALUE:true" {
+	if ExtractValueByDataType("BOOLEAN", []byte("true"), false) != "JQL_VALUE:true:END_JQL_VALUE" {
 		t.Error("Expected true, got false", ExtractValueByDataType("BOOLEAN", []byte("true"), false))
 	}
-	if ExtractValueByDataType("STRING", []byte("\"string\""), false) != "JQL_VALUE:'string'" {
+	if ExtractValueByDataType("STRING", []byte("\"string\""), false) != "JQL_VALUE:'string':END_JQL_VALUE" {
 		t.Error("Expected 'string', got", ExtractValueByDataType("STRING", []byte("\"string\""), false))
 	}
-	if ExtractValueByDataType("NUMBER", []byte("1"), false) != "JQL_VALUE:1" {
+	if ExtractValueByDataType("NUMBER", []byte("1"), false) != "JQL_VALUE:1:END_JQL_VALUE" {
 		t.Error("Expected 1, got", ExtractValueByDataType("NUMBER", []byte("1"), false))
 	}
-	if ExtractValueByDataType("FUNCTION", []byte("{\"sqlFunc\": {\"name\": \"func\", \"params\": [\"param1\", \"param2\"]}}"), false) != "func(JQL_VALUE:'param1', JQL_VALUE:'param2')" {
-		t.Error("Expected \"func(JQL_VALUE:'param1', JQL_VALUE:'param2')\", got", ExtractValueByDataType("FUNCTION", []byte("{\"sqlFunc\": {\"name\": \"func\", \"params\": [\"param1\", \"param2\"]}}"), false))
+	if ExtractValueByDataType("FUNCTION", []byte("{\"sqlFunc\": {\"name\": \"func\", \"params\": [\"param1\", \"param2\"]}}"), false) != "func(JQL_VALUE:'param1':END_JQL_VALUE, JQL_VALUE:'param2':END_JQL_VALUE)" {
+		t.Error("Expected \"func(JQL_VALUE:'param1':END_JQL_VALUE, JQL_VALUE:'param2':END_JQL_VALUE)\", got", ExtractValueByDataType("FUNCTION", []byte("{\"sqlFunc\": {\"name\": \"func\", \"params\": [\"param1\", \"param2\"]}}"), false))
 	}
 	if ExtractValueByDataType("FUNCTION", []byte("{\"sqlFunc\": {\"name\": \"func\", \"isField\": true, \"params\": [\"param1\"]}}"), false) != "func(param1)" {
 		t.Error("Expected \"func(param1)\", got", ExtractValueByDataType("FUNCTION", []byte("{\"sqlFunc\": {\"name\": \"func\", \"isField\": true, \"params\": [\"param1\"]}}"), false))
 	}
-	if ExtractValueByDataType("RAW", []byte("raw"), false) != "JQL_VALUE:raw" {
-		t.Error("Expected \"JQL_VALUE:raw\", got", ExtractValueByDataType("RAW", []byte("raw"), false))
+	if ExtractValueByDataType("RAW", []byte("raw"), false) != "JQL_VALUE:raw:END_JQL_VALUE" {
+		t.Error("Expected \"JQL_VALUE:raw:END_JQL_VALUE\", got", ExtractValueByDataType("RAW", []byte("raw"), false))
 	}
 
-	if ExtractValueByDataType("ARRAY", []byte("[\"1\", \"2\"]"), false) != "JQL_VALUE:'1', JQL_VALUE:'2'" {
-		t.Error("Expected \"JQL_VALUE:'1', JQL_VALUE:'2'\", got", ExtractValueByDataType("ARRAY", []byte("[\"1\", \"2\"]"), false))
+	if ExtractValueByDataType("ARRAY", []byte("[\"1\", \"2\"]"), false) != "JQL_VALUE:'1':END_JQL_VALUE, JQL_VALUE:'2':END_JQL_VALUE" {
+		t.Error("Expected \"JQL_VALUE:'1':END_JQL_VALUE, JQL_VALUE:'2':END_JQL_VALUE\", got", ExtractValueByDataType("ARRAY", []byte("[\"1\", \"2\"]"), false))
 	}
 
-	if ExtractValueByDataType("ARRAY", []byte("[1, 2]"), false) != "JQL_VALUE:1, JQL_VALUE:2" {
-		t.Error("Expected \"JQL_VALUE:1, JQL_VALUE:2\", got", ExtractValueByDataType("ARRAY", []byte("[JQL_VALUE:1, JQL_VALUE:2]"), false))
+	if ExtractValueByDataType("ARRAY", []byte("[1, 2]"), false) != "JQL_VALUE:1:END_JQL_VALUE, JQL_VALUE:2:END_JQL_VALUE" {
+		t.Error("Expected \"JQL_VALUE:1:END_JQL_VALUE, JQL_VALUE:2:END_JQL_VALUE\", got", ExtractValueByDataType("ARRAY", []byte("[JQL_VALUE:1, JQL_VALUE:2]"), false))
 	}
 }

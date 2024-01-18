@@ -7,6 +7,9 @@ import (
 	"strings"
 )
 
+var JQL_FLAG_OPEN = "JQL_VALUE:"
+var JQL_FLAG_CLOSE = ":END_JQL_VALUE"
+
 func IsValidDataType(datatype string) bool {
 	switch SQLDataTypeEnum(datatype) {
 	case String, Boolean, Number, Raw, Function:
@@ -43,10 +46,12 @@ func checkArrayType(raw json.RawMessage) (string, error) {
 func ArrayConversionToStringExpression(value json.RawMessage, isStatic bool, isField ...bool) string {
 	valCheckArrayType, _ := checkArrayType(value)
 
-	jqlFlag := ""
+	jqlFlagOpen := ""
+	jqlFlagClose := ""
 
 	if !isStatic {
-		jqlFlag = "JQL_VALUE:"
+		jqlFlagOpen = JQL_FLAG_OPEN
+		jqlFlagClose = JQL_FLAG_CLOSE
 	}
 
 	if isField != nil && isField[0] {
@@ -63,7 +68,7 @@ func ArrayConversionToStringExpression(value json.RawMessage, isStatic bool, isF
 
 		var tmpValueArrayString []string
 		for _, item := range valueArrayString {
-			tmpValueArrayString = append(tmpValueArrayString, jqlFlag+"'"+item+"'")
+			tmpValueArrayString = append(tmpValueArrayString, jqlFlagOpen+"'"+item+"'"+jqlFlagClose)
 		}
 
 		return strings.Join(tmpValueArrayString, ", ")
@@ -72,7 +77,7 @@ func ArrayConversionToStringExpression(value json.RawMessage, isStatic bool, isF
 		json.Unmarshal(value, &valueArrayNumber)
 		var valueArrayString []string
 		for _, item := range valueArrayNumber {
-			valueArrayString = append(valueArrayString, jqlFlag+strconv.FormatFloat(item, 'f', -1, 64))
+			valueArrayString = append(valueArrayString, jqlFlagOpen+strconv.FormatFloat(item, 'f', -1, 64)+jqlFlagClose)
 		}
 		return strings.Join(valueArrayString, ", ")
 
@@ -82,44 +87,31 @@ func ArrayConversionToStringExpression(value json.RawMessage, isStatic bool, isF
 }
 
 func ExtractValueByDataType(datatype SQLDataTypeEnum, value json.RawMessage, isStatic bool) string {
+	var valueString string
+	jqlFlagOpen := ""
+	jqlFlagClose := ""
+
+	if !isStatic {
+		jqlFlagOpen = JQL_FLAG_OPEN
+		jqlFlagClose = JQL_FLAG_CLOSE
+	}
+
 	switch datatype {
 	case String:
-		var valueString string
-		jqlFlag := ""
-
-		if !isStatic {
-			jqlFlag = "JQL_VALUE:"
-		}
 		json.Unmarshal(value, &valueString)
-		return jqlFlag + "'" + valueString + "'"
+		return jqlFlagOpen + "'" + valueString + "'" + jqlFlagClose
 	case Boolean:
 		var valueBool bool
-		jqlFlag := ""
-
-		if !isStatic {
-			jqlFlag = "JQL_VALUE:"
-		}
 
 		json.Unmarshal(value, &valueBool)
-		return jqlFlag + string(value)
+		return jqlFlagOpen + string(value) + jqlFlagClose
 	case Number:
 		var valueNumber float64
-		jqlFlag := ""
-
-		if !isStatic {
-			jqlFlag = "JQL_VALUE:"
-		}
 
 		json.Unmarshal(value, &valueNumber)
-		return jqlFlag + string(value)
+		return jqlFlagOpen + string(value) + jqlFlagClose
 	case Raw:
-		jqlFlag := ""
-
-		if !isStatic {
-			jqlFlag = "JQL_VALUE:"
-		}
-
-		return jqlFlag + string(value)
+		return jqlFlagOpen + string(value) + jqlFlagClose
 	case Array:
 		return ArrayConversionToStringExpression(value, isStatic)
 	case Function:

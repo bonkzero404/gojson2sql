@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
+	"unicode"
 )
 
 type Json2Sql struct {
@@ -59,17 +61,37 @@ func (jql *Json2Sql) JsonRawCaseDefauleValue(raw json.RawMessage) (CaseDefauleVa
 	return v, err == nil
 }
 
-func (jql *Json2Sql) MaskedQueryValue(query string) (string, []string) {
-	re := regexp.MustCompile(`JQL_VALUE:(\d+)|JQL_VALUE:'([^']+)'`)
+func (jql *Json2Sql) isStringNumeric(s string) bool {
+	for _, char := range s {
+		if !unicode.IsDigit(char) {
+			return false
+		}
+	}
+	return true
+}
+
+func (jql *Json2Sql) MaskedQueryValue(query string) (string, []interface{}) {
+	sRegex := fmt.Sprintf(`%s'([^\s]+)'%s|%s([^\s]+)%s`, JQL_FLAG_OPEN, JQL_FLAG_CLOSE, JQL_FLAG_OPEN, JQL_FLAG_CLOSE)
+	re := regexp.MustCompile(sRegex)
 	matches := re.FindAllStringSubmatch(query, -1)
 
-	var values []string
+	var values []interface{}
 	for _, match := range matches {
-		if len(match) == 3 {
-			if match[1] != "" {
-				values = append(values, match[1])
-			} else {
-				values = append(values, match[2])
+		for i := 1; i < len(match); i += 2 {
+			if match[i] != "" {
+				values = append(values, match[i])
+			} else if match[i+1] != "" {
+				var m = match[i+1]
+				if strings.ToLower(m) == "true" || strings.ToLower(m) == "false" {
+					booleanValue, _ := strconv.ParseBool(m)
+					values = append(values, booleanValue)
+				} else if jql.isStringNumeric(m) {
+					intValue, _ := strconv.ParseFloat(m, 64)
+					values = append(values, intValue)
+				} else {
+					values = append(values, m)
+				}
+
 			}
 		}
 	}
@@ -82,7 +104,9 @@ func (jql *Json2Sql) MaskedQueryValue(query string) (string, []string) {
 }
 
 func (jql *Json2Sql) rawValueExtractor(query string) string {
-	replacedQuery := strings.ReplaceAll(query, "JQL_VALUE:", "")
+	replacedQuery := strings.ReplaceAll(query, JQL_FLAG_OPEN, "")
+	replacedQuery = strings.ReplaceAll(replacedQuery, JQL_FLAG_CLOSE, "")
+
 	return replacedQuery
 }
 
@@ -119,7 +143,7 @@ func (jql *Json2Sql) GenerateSelectFrom(selection ...json.RawMessage) string {
 							jsonBytes, _ := json.Marshal(*sqlSelectDetail.SubQuery)
 							jql, _ := NewJson2Sql(jsonBytes)
 
-							field = fmt.Sprintf("(%s) AS %s", jql.Build(), *sqlSelectDetail.Alias)
+							field = fmt.Sprintf("(%s) AS %s", jql.rawBuild(), *sqlSelectDetail.Alias)
 						}
 					}
 
@@ -145,7 +169,7 @@ func (jql *Json2Sql) GenerateSelectFrom(selection ...json.RawMessage) string {
 										if selectExpect.SubQuery != nil {
 											jsonBytes, _ := json.Marshal(*selectExpect.SubQuery)
 											jql, _ := NewJson2Sql(jsonBytes)
-											defaultValue = fmt.Sprintf("(%s)", jql.Build())
+											defaultValue = fmt.Sprintf("(%s)", jql.rawBuild())
 										}
 									}
 								}
@@ -282,7 +306,7 @@ func (jql *Json2Sql) GenerateConditions(conditions ...Condition) string {
 					if selectSub.SubQuery != nil {
 						jsonBytes, _ := json.Marshal(*selectSub.SubQuery)
 						jql, _ := NewJson2Sql(jsonBytes)
-						expression = string(condition.Operator) + " " + fmt.Sprintf("(%s)", jql.Build())
+						expression = string(condition.Operator) + " " + fmt.Sprintf("(%s)", jql.rawBuild())
 					}
 				}
 			}
@@ -306,7 +330,7 @@ func (jql *Json2Sql) GenerateConditions(conditions ...Condition) string {
 						if selectExpect.SubQuery != nil {
 							jsonBytes, _ := json.Marshal(*selectExpect.SubQuery)
 							jql, _ := NewJson2Sql(jsonBytes)
-							expect = fmt.Sprintf("(%s)", jql.Build())
+							expect = fmt.Sprintf("(%s)", jql.rawBuild())
 						}
 					}
 				}
@@ -319,20 +343,41 @@ func (jql *Json2Sql) GenerateConditions(conditions ...Condition) string {
 	return strings.Join(conditionsStr, " ")
 }
 
-func (jql *Json2Sql) rawBuild() string {
-	sql := jql.GenerateSelectFrom() + jql.GenerateJoin() + jql.GenerateWhere() + jql.GenerateGroupBy() + jql.GenerateHaving() + jql.GenerateOrderBy()
+func (jql *Json2Sql) GenerateLimit() string {
+	var sql = ""
 
-	return cleanSpaces(sql)
+	if jql.sqlJson.Limit != nil {
+		sql += fmt.Sprintf(" LIMIT %d", *jql.sqlJson.Limit)
+	}
+
+	return sql
+}
+
+func (jql *Json2Sql) GenerateOffset() string {
+	var sql = ""
+
+	if jql.sqlJson.Offset != nil {
+		sql += fmt.Sprintf(" OFFSET %d", *jql.sqlJson.Offset)
+	}
+
+	return sql
+}
+
+func (jql *Json2Sql) concateQueryString() string {
+	return jql.GenerateSelectFrom() + jql.GenerateJoin() + jql.GenerateWhere() + jql.GenerateGroupBy() + jql.GenerateHaving() + jql.GenerateOrderBy() + jql.GenerateLimit() + jql.GenerateOffset()
+}
+
+func (jql *Json2Sql) rawBuild() string {
+	return cleanSpaces(jql.concateQueryString())
 }
 
 func (jql *Json2Sql) Build() string {
-	sql := jql.GenerateSelectFrom() + jql.GenerateJoin() + jql.GenerateWhere() + jql.GenerateGroupBy() + jql.GenerateHaving() + jql.GenerateOrderBy()
-	sqlCleanValue := jql.rawValueExtractor(sql)
+	sqlCleanValue := jql.rawValueExtractor(jql.concateQueryString())
 
 	return cleanSpaces(sqlCleanValue)
 }
 
-func (jql *Json2Sql) Generate() (string, []string, error) {
+func (jql *Json2Sql) Generate() (string, []interface{}, error) {
 	sql := jql.rawBuild()
 	newQuery, values := jql.MaskedQueryValue(sql)
 
