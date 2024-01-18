@@ -484,6 +484,82 @@ Param:
 [1 foo true 100 1 2020-01-01 2023-01-01 2 10]
 ```
 
+## Testing
+
+```go
+> go test -v -cover ./...
+=== RUN   TestConstructor
+--- PASS: TestConstructor (0.00s)
+=== RUN   TestConstructor_Fail
+--- PASS: TestConstructor_Fail (0.00s)
+=== RUN   TestRawJson_OK
+--- PASS: TestRawJson_OK (0.00s)
+=== RUN   TestRawJson_Error
+--- PASS: TestRawJson_Error (0.00s)
+=== RUN   TestMaskedQueryValue
+--- PASS: TestMaskedQueryValue (0.00s)
+=== RUN   TestGenerateSelectFrom
+--- PASS: TestGenerateSelectFrom (0.00s)
+=== RUN   TestGenerateSelectFrom_Selection
+--- PASS: TestGenerateSelectFrom_Selection (0.00s)
+=== RUN   TestGenerateSelectFrom_CaseWhenThen
+--- PASS: TestGenerateSelectFrom_CaseWhenThen (0.00s)
+=== RUN   TestGenerateSelectFrom_CaseDefaultValueSub
+--- PASS: TestGenerateSelectFrom_CaseDefaultValueSub (0.00s)
+=== RUN   TestSqlLikeAndBlankDatatype
+--- PASS: TestSqlLikeAndBlankDatatype (0.00s)
+=== RUN   TestSqlLikeWithOperand
+--- PASS: TestSqlLikeWithOperand (0.00s)
+=== RUN   TestBetweenWithOperand
+--- PASS: TestBetweenWithOperand (0.00s)
+=== RUN   TestCompositeWithoutOperand
+--- PASS: TestCompositeWithoutOperand (0.00s)
+=== RUN   TestGenerateOrderBy
+--- PASS: TestGenerateOrderBy (0.00s)
+=== RUN   TestGenerateOrderBy_WithSort
+--- PASS: TestGenerateOrderBy_WithSort (0.00s)
+=== RUN   TestGenerateGroupBy
+--- PASS: TestGenerateGroupBy (0.00s)
+=== RUN   TestGenerateJoin_JOIN
+--- PASS: TestGenerateJoin_JOIN (0.00s)
+=== RUN   TestGenerateJoin_INNER_JOIN
+--- PASS: TestGenerateJoin_INNER_JOIN (0.00s)
+=== RUN   TestGenerateJoin_LEFT_JOIN
+--- PASS: TestGenerateJoin_LEFT_JOIN (0.00s)
+=== RUN   TestGenerateJoin_RIGHT_JOIN
+--- PASS: TestGenerateJoin_RIGHT_JOIN (0.00s)
+=== RUN   TestGenerateHaving
+--- PASS: TestGenerateHaving (0.00s)
+=== RUN   TestGenerateWhere
+--- PASS: TestGenerateWhere (0.00s)
+=== RUN   TestGenerateConditions
+--- PASS: TestGenerateConditions (0.00s)
+=== RUN   TestGenerateConditions_SubQuery
+--- PASS: TestGenerateConditions_SubQuery (0.00s)
+=== RUN   TestBuildJsonToSql
+--- PASS: TestBuildJsonToSql (0.00s)
+=== RUN   TestGenerateJsonToSql
+--- PASS: TestGenerateJsonToSql (0.00s)
+=== RUN   TestIsValidDataType
+--- PASS: TestIsValidDataType (0.00s)
+=== RUN   TestGetValueFromDataType
+--- PASS: TestGetValueFromDataType (0.00s)
+=== RUN   TestCheckArrayType
+--- PASS: TestCheckArrayType (0.00s)
+=== RUN   TestArrayConversionToStringExpression
+--- PASS: TestArrayConversionToStringExpression (0.00s)
+=== RUN   TestExtractValueByDataType
+--- PASS: TestExtractValueByDataType (0.00s)
+=== RUN   TestGetSqlExpression
+--- PASS: TestGetSqlExpression (0.00s)
+=== RUN   TestIsValidOperator
+--- PASS: TestIsValidOperator (0.00s)
+=== RUN   TestGetValueFromOperator
+--- PASS: TestGetValueFromOperator (0.00s)
+PASS
+coverage: 100.0% of statements
+```
+
 ## Benchmarking
 
 In this benchmarking process, I used a 2020 MacBook Pro M1 with an 8-core processor (arm64) and 8GB of RAM. The following are the benchmark results obtained on my MacBook.
