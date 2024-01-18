@@ -11,16 +11,16 @@ type Json2Sql struct {
 	sqlJson *SQLJson
 }
 
-func NewJson2Sql(jsonData json.RawMessage) *Json2Sql {
+func NewJson2Sql(jsonData json.RawMessage) (*Json2Sql, error) {
 	var sqlJson *SQLJson
 
 	err := json.Unmarshal(jsonData, &sqlJson)
 
 	if err != nil {
-		return nil
+		return nil, fmt.Errorf("error: %s", err)
 	}
 
-	return &Json2Sql{sqlJson}
+	return &Json2Sql{sqlJson}, nil
 }
 
 func cleanSpaces(input string) string {
@@ -117,7 +117,8 @@ func (jql *Json2Sql) GenerateSelectFrom(selection ...json.RawMessage) string {
 
 						if sqlSelectDetail.SubQuery != nil {
 							jsonBytes, _ := json.Marshal(*sqlSelectDetail.SubQuery)
-							jql := NewJson2Sql(jsonBytes)
+							jql, _ := NewJson2Sql(jsonBytes)
+
 							field = fmt.Sprintf("(%s) AS %s", jql.Build(), *sqlSelectDetail.Alias)
 						}
 					}
@@ -143,7 +144,7 @@ func (jql *Json2Sql) GenerateSelectFrom(selection ...json.RawMessage) string {
 									if isSelectExpect {
 										if selectExpect.SubQuery != nil {
 											jsonBytes, _ := json.Marshal(*selectExpect.SubQuery)
-											jql := NewJson2Sql(jsonBytes)
+											jql, _ := NewJson2Sql(jsonBytes)
 											defaultValue = fmt.Sprintf("(%s)", jql.Build())
 										}
 									}
@@ -280,7 +281,7 @@ func (jql *Json2Sql) GenerateConditions(conditions ...Condition) string {
 				if isSelectSub {
 					if selectSub.SubQuery != nil {
 						jsonBytes, _ := json.Marshal(*selectSub.SubQuery)
-						jql := NewJson2Sql(jsonBytes)
+						jql, _ := NewJson2Sql(jsonBytes)
 						expression = string(condition.Operator) + " " + fmt.Sprintf("(%s)", jql.Build())
 					}
 				}
@@ -304,7 +305,7 @@ func (jql *Json2Sql) GenerateConditions(conditions ...Condition) string {
 					if isSelectExpect {
 						if selectExpect.SubQuery != nil {
 							jsonBytes, _ := json.Marshal(*selectExpect.SubQuery)
-							jql := NewJson2Sql(jsonBytes)
+							jql, _ := NewJson2Sql(jsonBytes)
 							expect = fmt.Sprintf("(%s)", jql.Build())
 						}
 					}
