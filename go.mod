@@ -1,4 +1,4 @@
-module gojson2sql
+module github.com/bonkzero404/gojson2sql
 
 go 1.20
 
