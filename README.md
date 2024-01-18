@@ -1,3 +1,10 @@
+<style>
+  code {
+    white-space : pre-wrap !important;
+    word-break: break-word;
+  }
+</style>
+
 # GoJSON2SQL
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/bonkzero404/gojson2sql)](https://goreportcard.com/report/github.com/bonkzero404/gojson2sql)
