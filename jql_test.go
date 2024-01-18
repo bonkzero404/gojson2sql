@@ -2,7 +2,6 @@ package gojson2sql
 
 import (
 	"encoding/json"
-	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -17,7 +16,6 @@ func TestConstructor(t *testing.T) {
 
 func TestConstructor_Fail(t *testing.T) {
 	var _, err = NewJson2Sql([]byte(`{"table":"test"`))
-	fmt.Println(err)
 	assert.NotNil(t, err)
 }
 
@@ -411,12 +409,12 @@ func TestGenerateJoin_JOIN(t *testing.T) {
 			{
 				"table":"t2",
 				"type":"join",
-				"on":{"a":"b"} 
+				"on":{"a":"b"}
 			},
 			{
 				"table":"t1",
 				"type":"join",
-				"on":{"b":"a"} 
+				"on":{"b":"a"}
 			}
 		]
 	}`
@@ -434,12 +432,12 @@ func TestGenerateJoin_INNER_JOIN(t *testing.T) {
 			{
 				"table":"t2",
 				"type":"inner",
-				"on":{"a":"b"} 
+				"on":{"a":"b"}
 			},
 			{
 				"table":"t1",
 				"type":"inner",
-				"on":{"b":"a"} 
+				"on":{"b":"a"}
 			}
 		]
 	}`
@@ -457,12 +455,12 @@ func TestGenerateJoin_LEFT_JOIN(t *testing.T) {
 			{
 				"table":"t2",
 				"type":"left",
-				"on":{"a":"b"} 
+				"on":{"a":"b"}
 			},
 			{
 				"table":"t1",
 				"type":"left",
-				"on":{"b":"a"} 
+				"on":{"b":"a"}
 			}
 		]
 	}`
@@ -480,12 +478,12 @@ func TestGenerateJoin_RIGHT_JOIN(t *testing.T) {
 			{
 				"table":"t2",
 				"type":"right",
-				"on":{"a":"b"} 
+				"on":{"a":"b"}
 			},
 			{
 				"table":"t1",
 				"type":"right",
-				"on":{"b":"a"} 
+				"on":{"b":"a"}
 			}
 		]
 	}`
@@ -804,7 +802,7 @@ func TestBuildJsonToSql(t *testing.T) {
 				"sort": "asc"
 			},
 			"limit": 1,
-			"offset": 0 
+			"offset": 0
 		}
 	`
 
@@ -952,14 +950,12 @@ func TestGenerateJsonToSql(t *testing.T) {
 				"sort": "asc"
 			},
 			"limit": 1,
-			"offset": 0 
+			"offset": 0
 		}
 	`
 
 	jql, _ := NewJson2Sql([]byte(jsonData))
 	sql, filter, _ := jql.Generate()
-
-	fmt.Println(sql, filter)
 
 	strExpectation := "SELECT table_1.a, table_1.b AS foo_bar, (SELECT * FROM table_4 WHERE a = ? LIMIT 1) AS baz, table_2.b, table_3.a, table_3.b FROM table_1 JOIN table_2 ON table_2.a = table_1.a LEFT JOIN table_3 ON table_3.a = table_2.a WHERE table_1.a = ? AND table_1.b = ? AND table_2.a > sum(?) AND table_2.b = (SELECT * FROM table_4 WHERE a = ? LIMIT 1) OR (table_3.a BETWEEN ? AND ? AND table_3.b = ?) GROUP BY table_1.a HAVING COUNT(table_2.a) > ? ORDER BY table_1.a, table_2.a ASC LIMIT 1 OFFSET 0"
 	assert.Equal(t, strExpectation, sql)
