@@ -552,6 +552,8 @@ Param:
 --- PASS: TestConstructor (0.00s)
 === RUN   TestConstructor_Fail
 --- PASS: TestConstructor_Fail (0.00s)
+=== RUN   TestConstructor_Fail_Union
+--- PASS: TestConstructor_Fail_Union (0.00s)
 === RUN   TestRawJson_OK
 --- PASS: TestRawJson_OK (0.00s)
 === RUN   TestRawJson_Error
@@ -608,6 +610,10 @@ Param:
 --- PASS: TestBuildJsonToSql (0.00s)
 === RUN   TestGenerateJsonToSql
 --- PASS: TestGenerateJsonToSql (0.00s)
+=== RUN   TestBuildRawUnion
+--- PASS: TestBuildRawUnion (0.00s)
+=== RUN   TestGenerateUnion
+--- PASS: TestGenerateUnion (0.00s)
 === RUN   TestIsValidDataType
 --- PASS: TestIsValidDataType (0.00s)
 === RUN   TestGetValueFromDataType
