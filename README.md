@@ -52,6 +52,7 @@ func main() {
 			"limit": 1
 		}
 	`
+
 	jql, err := gojson2sql.NewJson2Sql([]byte(sqlJson))
 	if err != nil {
 		panic(err)
