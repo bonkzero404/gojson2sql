@@ -12,10 +12,10 @@ Currently, it can only perform select queries.
 
 ## TODO:
 
--   Implement Union queries
--   Insert Query
--   Validate SQL Syntax
--   ?
+- Implement Union queries
+- Insert Query
+- Validate SQL Syntax
+- ?
 
 ## Installation
 
@@ -120,185 +120,197 @@ const (
 
 In general, the structure of the JSON format used is as follows:
 
--   **_table_**: Used to describe the table name, e.g. table_name (string)
+- **_table_**: Used to describe the table name, e.g. table_name (string)
 
--   **\*selectFields\*\***:
-    Used to select fields from a table, this property uses the **_Array_** type, you can combine **_Array of String_**, and **_Array of Json_**, the example is as follows:
+- **selectFields**:
+  Used to select fields from a table, this property uses the **_Array_** type, you can combine **_Array of String_**, and **_Array of Json_**, the example is as follows:
 
-    ```json
-    {
-        "selectFields": [
-            "table_1.a",
+  ```json
+  {
+    "selectFields": [
+      "table_1.a",
+      {
+        "field": "table_1.b",
+        "alias": "foo_bar"
+      },
+      {
+        "field": "table_2.a",
+        "alias": "baz",
+        "subquery": {
+          "table": "table_4",
+          "selectFields": ["*"],
+          "conditions": [
             {
-                "field": "table_1.b",
-                "alias": "foo_bar"
-            },
-            {
-                "field": "table_2.a",
-                "alias": "baz",
-                "subquery": {
-                    "table": "table_4",
-                    "selectFields": ["*"],
-                    "conditions": [
-                        {
-                            "datatype": "number",
-                            "clause": "a",
-                            "operator": "=",
-                            "value": 1
-                        }
-                    ],
-                    "limit": 1
-                }
-            },
-            "table_2.b",
-            "table_3.a",
-            "table_3.b"
-        ]
-    }
-    ```
-
-    There you can see there is a subquery, you can use a subquery with the same format as its parent, you can also describe a field with an alias in the selection field.
-
-    > **_NOTE:_** If you are using a subquery, you do not need to describe the data type
-
--   **_join_**:
-    You can use join to combine multiple tables, an example is as follows:
-
-    ```json
-    {
-        "join": [
-            {
-                "table": "table_2",
-                "type": "join",
-                "on": {
-                    "table_2.a": "table_1.a"
-                }
-            },
-            {
-                "table": "table_3",
-                "type": "left",
-                "on": {
-                    "table_3.a": "table_2.a"
-                }
+              "datatype": "number",
+              "clause": "a",
+              "operator": "=",
+              "value": 1
             }
-        ]
-    }
-    ```
-
--   **conditions**:
-    Conditions are used for SQL Where clauses. The structure of these conditions is dynamic; you can use a function, subquery, or composite. Consider the following example:
-    ```json
-    {
-        "conditions": [
-            {
-                "datatype": "string",
-                "clause": "table_1.a",
-                "operator": "=",
-                "value": "foo"
-            },
-            {
-                "operand": "and",
-                "datatype": "boolean",
-                "clause": "table_1.b",
-                "operator": "=",
-                "value": true
-            },
-            {
-                "operand": "and",
-                "datatype": "function",
-                "clause": "table_2.a",
-                "operator": ">",
-                "value": {
-                    "sqlFunc": {
-                        "name": "sum",
-                        "params": [100]
-                    }
-                }
-            },
-            {
-                "operand": "and",
-                "clause": "table_2.b",
-                "operator": "=",
-                "value": {
-                    "subquery": {
-                        "table": "table_4",
-                        "selectFields": ["*"],
-                        "conditions": [
-                            {
-                                "datatype": "number",
-                                "clause": "a",
-                                "operator": "=",
-                                "value": 1
-                            }
-                        ],
-                        "limit": 1
-                    }
-                }
-            },
-            {
-                "operand": "or",
-                "composite": [
-                    {
-                        "clause": "table_3.a",
-                        "datatype": "string",
-                        "operator": "between",
-                        "value": {
-                            "from": "2020-01-01",
-                            "to": "2023-01-01"
-                        }
-                    },
-                    {
-                        "operand": "and",
-                        "datatype": "string",
-                        "clause": "table_3.b",
-                        "operator": "=",
-                        "value": "2"
-                    }
-                ]
-            }
-        ]
-    }
-    ```
--   **groupBy**:
-
-    ```json
-    {
-        "groupBy": {
-            "fields": ["table_1.a"]
+          ],
+          "limit": 1
         }
-    }
-    ```
+      },
+      "table_2.b",
+      "table_3.a",
+      "table_3.b"
+    ]
+  }
+  ```
 
--   **having**
-    ```json
-    {
-        "having": [
-            {
-                "clause": {
-                    "sqlFunc": {
-                        "name": "count",
-                        "isField": true,
-                        "params": ["table_2.a"]
-                    }
-                },
+  There you can see there is a subquery, you can use a subquery with the same format as its parent, you can also describe a field with an alias in the selection field.
+
+  > **_NOTE:_** If you are using a subquery, you do not need to describe the data type
+
+- **_join_**:
+  You can use join to combine multiple tables, an example is as follows:
+
+  ```json
+  {
+    "join": [
+      {
+        "table": "table_2",
+        "type": "join",
+        "on": {
+          "table_2.a": "table_1.a"
+        }
+      },
+      {
+        "table": "table_3",
+        "type": "left",
+        "on": {
+          "table_3.a": "table_2.a"
+        }
+      }
+    ]
+  }
+  ```
+
+- **conditions**:
+  Conditions are used for SQL Where clauses. The structure of these conditions is dynamic; you can use a function, subquery, or composite. Consider the following example:
+  ```json
+  {
+    "conditions": [
+      {
+        "datatype": "string",
+        "clause": "table_1.a",
+        "operator": "=",
+        "value": "foo"
+      },
+      {
+        "operand": "and",
+        "datatype": "boolean",
+        "clause": "table_1.b",
+        "operator": "=",
+        "value": true
+      },
+      {
+        "operand": "and",
+        "datatype": "function",
+        "clause": "table_2.a",
+        "operator": ">",
+        "value": {
+          "sqlFunc": {
+            "name": "sum",
+            "params": [100]
+          }
+        }
+      },
+      {
+        "operand": "and",
+        "clause": "table_2.b",
+        "operator": "=",
+        "value": {
+          "subquery": {
+            "table": "table_4",
+            "selectFields": ["*"],
+            "conditions": [
+              {
                 "datatype": "number",
-                "operator": ">",
-                "value": 10
+                "clause": "a",
+                "operator": "=",
+                "value": 1
+              }
+            ],
+            "limit": 1
+          }
+        }
+      },
+      {
+        "operand": "or",
+        "composite": [
+          {
+            "clause": "table_3.a",
+            "datatype": "string",
+            "operator": "between",
+            "value": {
+              "from": "2020-01-01",
+              "to": "2023-01-01"
             }
+          },
+          {
+            "operand": "and",
+            "datatype": "string",
+            "clause": "table_3.b",
+            "operator": "=",
+            "value": "2"
+          }
         ]
+      }
+    ]
+  }
+  ```
+- **groupBy**:
+
+  ```json
+  {
+    "groupBy": {
+      "fields": ["table_1.a"]
     }
-    ```
-    **orderBy, limit, offset**:
-    ```json
-    {
-        "orderBy": {
-            "fields": ["table_1.a", "table_2.a"],
-            "sort": "asc"
+  }
+  ```
+
+- **having**
+  ```json
+  {
+    "having": [
+      {
+        "clause": {
+          "sqlFunc": {
+            "name": "count",
+            "isField": true,
+            "params": ["table_2.a"]
+          }
         },
-        "limit": 1,
-        "offset": 0
+        "datatype": "number",
+        "operator": ">",
+        "value": 10
+      }
+    ]
+  }
+  ```
+  **orderBy, limit, offset**:
+  ```json
+  {
+    "orderBy": {
+      "fields": ["table_1.a", "table_2.a"],
+      "sort": "asc"
+    },
+    "limit": 1,
+    "offset": 0
+  }
+  ```
+  Or you can describe the limit and offset like this
+  ```json
+  {
+    "offset": {
+      "isStatic": true,
+      "value": 10
+    },
+    "offset": {
+      "value": 10
     }
-    ```
+  }
+  ```
 
 ## Convert to Raw Query
 
@@ -536,6 +548,14 @@ Param:
 --- PASS: TestGenerateConditions (0.00s)
 === RUN   TestGenerateConditions_SubQuery
 --- PASS: TestGenerateConditions_SubQuery (0.00s)
+=== RUN   TestLimit_Static
+--- PASS: TestLimit_Static (0.00s)
+=== RUN   TestLimit_ToParam
+--- PASS: TestLimit_ToParam (0.00s)
+=== RUN   TestOffset_Static
+--- PASS: TestOffset_Static (0.00s)
+=== RUN   TestOffset_ToParam
+--- PASS: TestOffset_ToParam (0.00s)
 === RUN   TestBuildJsonToSql
 --- PASS: TestBuildJsonToSql (0.00s)
 === RUN   TestGenerateJsonToSql
@@ -564,9 +584,9 @@ coverage: 100.0% of statements
 
 Specs:
 
--   MacBook Pro M1 (2020)
--   8-Cores (arm64)
--   8GB of RAM
+- MacBook Pro M1 (2020)
+- 8-Cores (arm64)
+- 8GB of RAM
 
 ```go
 > go test -bench=. -benchmem
