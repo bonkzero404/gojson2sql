@@ -12,8 +12,7 @@ Currently, it can only perform select queries.
 
 ## TODO:
 
-- Implement Union queries
-- Insert Query
+- More Queries
 - Validate SQL Syntax
 - ?
 
@@ -81,6 +80,47 @@ sql, param, _ := jql.Generate()
 
 db.Query(sql, param)
 ```
+
+## Example Union Query Operation
+
+```json
+[
+  {
+    "table": "table_1",
+    "selectFields": ["a", "b"],
+    "conditions": [
+      {
+        "datatype": "number",
+        "clause": "a",
+        "operator": "=",
+        "value": 1
+      }
+    ],
+    "limit": 1
+  },
+  {
+    "table": "table_2",
+    "selectFields": ["a", "b"],
+    "conditions": [
+      {
+        "datatype": "number",
+        "clause": "a",
+        "operator": "=",
+        "value": 1
+      }
+    ],
+    "limit": 1
+  }
+]
+```
+
+Output:
+
+```
+SELECT a, b FROM table_1 WHERE a = 1 LIMIT 1 UNION SELECT a, b FROM table_2 WHERE a = 1 LIMIT 1
+```
+
+You can see the difference between a union query and a standard select. In a union, you must use a JSON array with the standard JSON format as before.
 
 ## Operator Lists
 
