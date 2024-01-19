@@ -647,6 +647,8 @@ Specs:
 goos: darwin
 goarch: arm64
 pkg: github.com/bonkzero404/gojson2sql
-BenchmarkJson2Sql_Build-8          12582             95278 ns/op           31511 B/op        535 allocs/op
-BenchmarkJson2Sql_Generate-8        9433            123334 ns/op           43108 B/op        634 allocs/op
+BenchmarkJson2Sql_BuildRaw-8               12708             93796 ns/op           32254 B/op        557 allocs/op
+BenchmarkJson2Sql_Generate-8                9804            121693 ns/op           43773 B/op        656 allocs/op
+BenchmarkJson2Sql_Union_BuildRaw-8          6015            196128 ns/op           70700 B/op       1106 allocs/op
+BenchmarkJson2Sql_Union_Generate-8          4876            240539 ns/op           80684 B/op       1232 allocs/op
 ```
