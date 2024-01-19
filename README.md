@@ -62,7 +62,6 @@ func main() {
 	fmt.Println("SQL:", sql)
 	fmt.Println("Param:", param)
 }
-
 ```
 
 Output:
