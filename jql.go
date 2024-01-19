@@ -10,10 +10,21 @@ import (
 )
 
 type Json2Sql struct {
-	sqlJson *SQLJson
+	sqlJson            *SQLJson
+	sqlJsonSelectUnion *[]SQLJson
 }
 
-func NewJson2Sql(jsonData json.RawMessage) (*Json2Sql, error) {
+func NewJson2Sql(jsonData json.RawMessage, isUnion ...bool) (*Json2Sql, error) {
+	if isUnion != nil && isUnion[0] {
+		var sqlJsonUnion []SQLJson
+
+		err := json.Unmarshal([]byte(jsonData), &sqlJsonUnion)
+		if err != nil {
+			return nil, fmt.Errorf("error: %s", err)
+		}
+		return &Json2Sql{sqlJsonSelectUnion: &sqlJsonUnion}, nil
+	}
+
 	var sqlJson *SQLJson
 
 	err := json.Unmarshal(jsonData, &sqlJson)
@@ -21,8 +32,7 @@ func NewJson2Sql(jsonData json.RawMessage) (*Json2Sql, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error: %s", err)
 	}
-
-	return &Json2Sql{sqlJson}, nil
+	return &Json2Sql{sqlJson: sqlJson}, nil
 }
 
 func cleanSpaces(input string) string {
@@ -401,6 +411,37 @@ func (jql *Json2Sql) Build() string {
 
 func (jql *Json2Sql) Generate() (string, []interface{}, error) {
 	sql := jql.rawBuild()
+	newQuery, values := jql.MaskedQueryValue(sql)
+
+	return newQuery, values, nil
+}
+
+func (jql *Json2Sql) buildRawUnion() string {
+	var sql string
+	var sqlUnion []string
+
+	if jql.sqlJsonSelectUnion != nil {
+		for _, v := range *jql.sqlJsonSelectUnion {
+			jql.sqlJson = &v
+			strBuild := jql.rawBuild()
+			sqlUnion = append(sqlUnion, strBuild)
+		}
+	}
+
+	jql.sqlJson = nil
+	sql = strings.Join(sqlUnion, " UNION ")
+
+	return sql
+}
+
+func (jql *Json2Sql) BuildUnion() string {
+	sqlCleanValue := jql.rawValueExtractor(jql.buildRawUnion())
+
+	return cleanSpaces(sqlCleanValue)
+}
+
+func (jql *Json2Sql) GenerateUnion() (string, []interface{}, error) {
+	sql := jql.buildRawUnion()
 	newQuery, values := jql.MaskedQueryValue(sql)
 
 	return newQuery, values, nil
