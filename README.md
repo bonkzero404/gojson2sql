@@ -806,6 +806,8 @@ OFFSET 0
 --- PASS: TestGenerateSelectFrom_CaseWhenThen (0.00s)
 === RUN   TestGenerateSelectFrom_CaseDefaultValueSub
 --- PASS: TestGenerateSelectFrom_CaseDefaultValueSub (0.00s)
+=== RUN   TestGenerateSelectFrom_SqlFunc
+--- PASS: TestGenerateSelectFrom_SqlFunc (0.00s)
 === RUN   TestSqlLikeAndBlankDatatype
 --- PASS: TestSqlLikeAndBlankDatatype (0.00s)
 === RUN   TestSqlLikeWithOperand
