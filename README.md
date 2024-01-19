@@ -116,7 +116,7 @@ db.Query(sql, param)
 
 Output:
 
-```
+```sql
 SELECT a, b FROM table_1 WHERE a = 1 LIMIT 1 UNION SELECT a, b FROM table_2 WHERE a = 1 LIMIT 1
 ```
 
@@ -377,7 +377,7 @@ fmt.Println("SQL:", sql)
 
 Output:
 
-```
+```sql
 SQL: SELECT a, b FROM table_1 WHERE a = 1 LIMIT 1
 ```
 
