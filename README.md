@@ -116,6 +116,14 @@ const (
 )
 ```
 
+## isStatic / isField Properties
+
+- isStatic: boolean
+  isStatic is used to set the value of the clause. If true, the value will not be parsed to parameters. However, if false, the opposite will occur. This is typically used in where statements.
+
+- isField: boolean
+  isField is used to set a field so that it does not use single quotes. For example, if you describe a function and do not use isField, it will look like this: COUNT('field'). However, if you use isField, it will look like this: COUNT(field).
+
 ## JSON Format
 
 In general, the structure of the JSON format used is as follows:
@@ -159,7 +167,7 @@ In general, the structure of the JSON format used is as follows:
 
   There you can see there is a subquery, you can use a subquery with the same format as its parent, you can also describe a field with an alias in the selection field.
 
-  > **_NOTE:_** If you are using a subquery, you do not need to describe the data type
+  > **_NOTE:_** If you are using a subquery, you don't need to describe the data type
 
 - **_join_**:
   You can use join to combine multiple tables, an example is as follows:
