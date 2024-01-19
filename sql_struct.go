@@ -51,9 +51,10 @@ type SqlFunc struct {
 }
 
 type SelectionFields struct {
-	Field    string   `json:"field"`
-	Alias    *string  `json:"alias"`
-	SubQuery *SQLJson `json:"subquery"`
+	Field       string   `json:"field"`
+	Alias       *string  `json:"alias"`
+	SubQuery    *SQLJson `json:"subquery"`
+	AddFunction *SqlFunc `json:"addFunction"`
 }
 
 type Case struct {

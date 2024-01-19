@@ -274,6 +274,30 @@ func TestGenerateSelectFrom_CaseDefaultValueSub(t *testing.T) {
 	assert.Equal(t, strings.TrimSpace(strExpected), strings.TrimSpace(str))
 }
 
+func TestGenerateSelectFrom_SqlFunc(t *testing.T) {
+	strTest := `{
+		"table": "test",
+		"selectFields": [
+			{
+				"alias": "a_test",
+				"addFunction": {
+					"sqlFunc": {
+						"name": "count",
+						"isField": true,
+						"params": ["a"]
+					}
+				}
+			}
+		]
+	}`
+	strExpected := `SELECT COUNT(a) AS a_test FROM test`
+
+	jql, _ := NewJson2Sql([]byte(strTest))
+	str := jql.GenerateSelectFrom()
+
+	assert.Equal(t, strings.TrimSpace(strExpected), strings.TrimSpace(str))
+}
+
 func TestSqlLikeAndBlankDatatype(t *testing.T) {
 	var sqlTest = `
 		{

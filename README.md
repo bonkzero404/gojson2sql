@@ -67,7 +67,7 @@ func main() {
 
 Output:
 
-```
+```sql
 SQL: SELECT a, b FROM table_1 WHERE a = ? LIMIT
 Param: [1]
 ```
@@ -536,12 +536,250 @@ fmt.Println("Param:", param)
 
 output:
 
-```
+```sql
 SQL:
-SELECT table_1.a, table_1.b AS foo_bar, (SELECT * FROM table_4 WHERE a = ? LIMIT 1) AS baz, table_2.b, table_3.a, table_3.b FROM table_1 JOIN table_2 ON table_2.a = table_1.a LEFT JOIN table_3 ON table_3.a = table_2.a WHERE table_1.a = ? AND table_1.b = ? AND table_2.a > sum(?) AND table_2.b = (SELECT * FROM table_4 WHERE a = ? LIMIT 1) OR (table_3.a BETWEEN ? AND ? AND table_3.b = ?) GROUP BY table_1.a HAVING COUNT(table_2.a) > ? ORDER BY table_1.a, table_2.a ASC LIMIT 1 OFFSET 0
+SELECT
+  table_1.a,
+  table_1.b AS foo_bar,
+  (SELECT * FROM table_4 WHERE a = ? LIMIT 1) AS baz,
+  table_2.b,
+  table_3.a,
+  table_3.b
+FROM table_1
+  JOIN table_2 ON table_2.a = table_1.a
+  LEFT JOIN table_3 ON table_3.a = table_2.a
+WHERE
+  table_1.a = ? AND
+  table_1.b = ? AND
+  table_2.a > sum(?) AND
+  table_2.b = (SELECT * FROM table_4 WHERE a = ? LIMIT 1) OR
+  (table_3.a BETWEEN ? AND ? AND table_3.b = ?)
+GROUP BY table_1.a
+HAVING COUNT(table_2.a) > ?
+ORDER BY table_1.a, table_2.a ASC
+LIMIT 1
+OFFSET 0
 
 Param:
 [1 foo true 100 1 2020-01-01 2023-01-01 2 10]
+```
+
+## Complete Example JSON
+
+```json
+{
+  "table": "table_1",
+  "selectFields": [
+    {
+      "field": "table_1.a",
+      "alias": "foo_bar"
+    },
+    {
+      "alias": "foo_bar_baz",
+      "addFunction": {
+        "sqlFunc": {
+          "name": "count",
+          "isField": true,
+          "params": ["table_1.b"]
+        }
+      }
+    },
+    {
+      "field": "table_2.a",
+      "alias": "baz",
+      "subquery": {
+        "table": "table_4",
+        "selectFields": ["*"],
+        "conditions": [
+          {
+            "datatype": "number",
+            "clause": "a",
+            "operator": "=",
+            "value": 1
+          }
+        ],
+        "limit": 1
+      }
+    },
+    {
+      "when": [
+        {
+          "clause": "table_2.b",
+          "datatype": "number",
+          "isStatic": true,
+          "operator": ">",
+          "value": 100,
+          "expectation": {
+            "datatype": "BOOLEAN",
+            "isStatic": true,
+            "value": true
+          }
+        }
+      ],
+      "defaultValue": {
+        "isStatic": true,
+        "value": {
+          "subquery": {
+            "table": "table_3",
+            "selectFields": ["*"],
+            "conditions": [
+              {
+                "datatype": "NUMBER",
+                "clause": "a",
+                "operator": "=",
+                "value": 1
+              }
+            ],
+            "limit": 1
+          }
+        }
+      },
+      "alias": "field_alias"
+    },
+    "table_3.a",
+    "table_3.b"
+  ],
+  "join": [
+    {
+      "table": "table_2",
+      "type": "join",
+      "on": {
+        "table_2.a": "table_1.a"
+      }
+    },
+    {
+      "table": "table_3",
+      "type": "left",
+      "on": {
+        "table_3.a": "table_2.a"
+      }
+    }
+  ],
+  "conditions": [
+    {
+      "datatype": "string",
+      "clause": "table_1.a",
+      "operator": "=",
+      "value": "foo"
+    },
+    {
+      "operand": "and",
+      "datatype": "boolean",
+      "clause": "table_1.b",
+      "operator": "=",
+      "value": true
+    },
+    {
+      "operand": "and",
+      "datatype": "function",
+      "clause": "table_2.a",
+      "operator": ">",
+      "value": {
+        "sqlFunc": {
+          "name": "sum",
+          "params": [100]
+        }
+      }
+    },
+    {
+      "operand": "and",
+      "clause": "table_2.b",
+      "operator": "=",
+      "value": {
+        "subquery": {
+          "table": "table_4",
+          "selectFields": ["*"],
+          "conditions": [
+            {
+              "datatype": "number",
+              "clause": "a",
+              "operator": "=",
+              "value": 1
+            }
+          ],
+          "limit": 1
+        }
+      }
+    },
+    {
+      "operand": "or",
+      "composite": [
+        {
+          "clause": "table_3.a",
+          "datatype": "string",
+          "operator": "between",
+          "value": {
+            "from": "2020-01-01",
+            "to": "2023-01-01"
+          }
+        },
+        {
+          "operand": "and",
+          "datatype": "string",
+          "clause": "table_3.b",
+          "operator": "=",
+          "value": "2"
+        }
+      ]
+    }
+  ],
+  "groupBy": {
+    "fields": ["table_1.a"]
+  },
+  "having": [
+    {
+      "clause": {
+        "sqlFunc": {
+          "name": "count",
+          "isField": true,
+          "params": ["table_2.a"]
+        }
+      },
+      "datatype": "number",
+      "operator": ">",
+      "value": 10
+    }
+  ],
+  "orderBy": {
+    "fields": ["table_1.a", "table_2.a"],
+    "sort": "asc"
+  },
+  "limit": {
+    "isStatic": true,
+    "value": 10
+  },
+  "offset": 0
+}
+```
+
+output:
+
+```sql
+SELECT
+  table_1.a AS foo_bar,
+  COUNT(table_1.b) AS foo_bar_baz,
+  (SELECT * FROM table_4 WHERE a = 1 LIMIT 1) AS baz,
+  CASE
+    WHEN table_2.b > 100 THEN true
+    ELSE (SELECT * FROM table_3 WHERE a = 1 LIMIT 1)
+  END AS field_alias,
+  table_3.a,
+  table_3.b
+FROM table_1
+  JOIN table_2 ON table_2.a = table_1.a
+  LEFT JOIN table_3 ON table_3.a = table_2.a
+WHERE
+  table_1.a = 'foo' AND
+  table_1.b = true AND
+  table_2.a > sum(100) AND
+  table_2.b = (SELECT * FROM table_4 WHERE a = 1 LIMIT 1) OR
+  (table_3.a BETWEEN '2020-01-01' AND '2023-01-01' AND table_3.b = '2')
+GROUP BY table_1.a
+HAVING
+  COUNT(table_2.a) > 10
+ORDER BY table_1.a, table_2.a ASC
+LIMIT 10
+OFFSET 0
 ```
 
 ## Testing

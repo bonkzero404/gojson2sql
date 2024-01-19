@@ -161,6 +161,11 @@ func (jql *Json2Sql) GenerateSelectFrom(selection ...json.RawMessage) string {
 
 							field = fmt.Sprintf("(%s) AS %s", jql.rawBuild(), *sqlSelectDetail.Alias)
 						}
+
+						if sqlSelectDetail.AddFunction != nil {
+							paramFunc := ArrayConversionToStringExpression(sqlSelectDetail.AddFunction.SqlFunc.Params, *sqlSelectDetail.AddFunction.SqlFunc.IsField, *sqlSelectDetail.AddFunction.SqlFunc.IsField)
+							field = fmt.Sprintf("%s(%s) AS %s", strings.ToUpper(sqlSelectDetail.AddFunction.SqlFunc.Name), paramFunc, *sqlSelectDetail.Alias)
+						}
 					}
 
 					sqlSelectCase, isSqlSelectCaseField := jql.JsonRawSelectCase(selectField)
