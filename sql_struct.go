@@ -27,8 +27,8 @@ type SQLJson struct {
 		Fields []string `json:"fields"`
 		Sort   *string  `json:"sort"`
 	} `json:"orderBy"`
-	Limit  *int `json:"limit"`
-	Offset *int `json:"offset"`
+	Limit  *json.RawMessage `json:"limit"`
+	Offset *json.RawMessage `json:"offset"`
 }
 
 type Join struct {
@@ -66,6 +66,11 @@ type ValueAdjacent struct {
 	Value    json.RawMessage  `json:"value"`
 	Datatype *SQLDataTypeEnum `json:"datatype"`
 	IsStatic *bool            `json:"isStatic"`
+}
+
+type LimitOffsetValue struct {
+	IsStatic bool `json:"isStatic"`
+	Value    int  `json:"value"`
 }
 
 type ExpectationField ValueAdjacent

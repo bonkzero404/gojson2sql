@@ -665,6 +665,64 @@ func TestGenerateConditions_SubQuery(t *testing.T) {
 	assert.Equal(t, strExpected, strings.TrimSpace(str))
 }
 
+func TestLimit_Static(t *testing.T) {
+	strTest := `{
+		"limit": {
+			"isStatic": true,
+			"value": 10
+		}
+	}`
+	strExpected := `LIMIT 10`
+
+	jql, _ := NewJson2Sql([]byte(strTest))
+	str := jql.GenerateLimit()
+
+	assert.Equal(t, strExpected, strings.TrimSpace(str))
+}
+
+func TestLimit_ToParam(t *testing.T) {
+	strTest := `{
+		"limit": {
+			"value": 10
+		}
+	}`
+	strExpected := `LIMIT JQL_VALUE:10:END_JQL_VALUE`
+
+	jql, _ := NewJson2Sql([]byte(strTest))
+	str := jql.GenerateLimit()
+
+	assert.Equal(t, strExpected, strings.TrimSpace(str))
+}
+
+func TestOffset_Static(t *testing.T) {
+	strTest := `{
+		"offset": {
+			"isStatic": true,
+			"value": 10
+		}
+	}`
+	strExpected := `OFFSET 10`
+
+	jql, _ := NewJson2Sql([]byte(strTest))
+	str := jql.GenerateOffset()
+
+	assert.Equal(t, strExpected, strings.TrimSpace(str))
+}
+
+func TestOffset_ToParam(t *testing.T) {
+	strTest := `{
+		"offset": {
+			"value": 10
+		}
+	}`
+	strExpected := `OFFSET JQL_VALUE:10:END_JQL_VALUE`
+
+	jql, _ := NewJson2Sql([]byte(strTest))
+	str := jql.GenerateOffset()
+
+	assert.Equal(t, strExpected, strings.TrimSpace(str))
+}
+
 func TestBuildJsonToSql(t *testing.T) {
 	jsonData := `
 		{

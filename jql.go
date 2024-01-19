@@ -61,6 +61,12 @@ func (jql *Json2Sql) JsonRawCaseDefauleValue(raw json.RawMessage) (CaseDefauleVa
 	return v, err == nil
 }
 
+func (jql *Json2Sql) JsonRawLimitOffsetValue(raw json.RawMessage) (LimitOffsetValue, bool) {
+	var v LimitOffsetValue
+	err := json.Unmarshal(raw, &v)
+	return v, err == nil
+}
+
 func (jql *Json2Sql) isStringNumeric(s string) bool {
 	for _, char := range s {
 		if !unicode.IsDigit(char) {
@@ -345,9 +351,17 @@ func (jql *Json2Sql) GenerateConditions(conditions ...Condition) string {
 
 func (jql *Json2Sql) GenerateLimit() string {
 	var sql = ""
-
 	if jql.sqlJson.Limit != nil {
-		sql += fmt.Sprintf(" LIMIT %d", *jql.sqlJson.Limit)
+		v, b := jql.JsonRawLimitOffsetValue(*jql.sqlJson.Limit)
+		if b {
+			if v.IsStatic {
+				sql += fmt.Sprintf(" LIMIT %s", strconv.Itoa(v.Value))
+			} else {
+				sql += fmt.Sprintf(" LIMIT %s%s%s", JQL_FLAG_OPEN, strconv.Itoa(v.Value), JQL_FLAG_CLOSE)
+			}
+		} else {
+			sql += fmt.Sprintf(" LIMIT %s", *jql.sqlJson.Limit)
+		}
 	}
 
 	return sql
@@ -355,9 +369,17 @@ func (jql *Json2Sql) GenerateLimit() string {
 
 func (jql *Json2Sql) GenerateOffset() string {
 	var sql = ""
-
 	if jql.sqlJson.Offset != nil {
-		sql += fmt.Sprintf(" OFFSET %d", *jql.sqlJson.Offset)
+		v, b := jql.JsonRawLimitOffsetValue(*jql.sqlJson.Offset)
+		if b {
+			if v.IsStatic {
+				sql += fmt.Sprintf(" OFFSET %s", strconv.Itoa(v.Value))
+			} else {
+				sql += fmt.Sprintf(" OFFSET %s%s%s", JQL_FLAG_OPEN, strconv.Itoa(v.Value), JQL_FLAG_CLOSE)
+			}
+		} else {
+			sql += fmt.Sprintf(" OFFSET %s", *jql.sqlJson.Offset)
+		}
 	}
 
 	return sql
