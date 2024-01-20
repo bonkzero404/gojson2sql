@@ -929,12 +929,12 @@ Specs:
 goos: darwin
 goarch: arm64
 pkg: github.com/bonkzero404/gojson2sql
-BenchmarkJson2Sql_BuildRaw-8                               12331            105328 ns/op           32367 B/op        563 allocs/op
-BenchmarkJson2Sql_Generate-8                                9469            122841 ns/op           43908 B/op        662 allocs/op
-BenchmarkJson2Sql_Union_BuildRaw-8                          5832            200529 ns/op           71018 B/op       1118 allocs/op
-BenchmarkJson2Sql_Union_Generate-8                          4783            244807 ns/op           80860 B/op       1244 allocs/op
-BenchmarkJson2Sql_BuildRaw_WithSanitizedSQLi-8              5600            205645 ns/op           52442 B/op        683 allocs/op
-BenchmarkJson2Sql_Generate_WithSanitizedSQLi-8              4513            280251 ns/op           64269 B/op        782 allocs/op
-BenchmarkJson2Sql_Union_BuildRaw_WithSanitizedSQLi-8        2888            395167 ns/op           92439 B/op       1238 allocs/op
-BenchmarkJson2Sql_Union_Generate_WithSanitizedSQLi-8        2209            516783 ns/op          102815 B/op       1364 allocs/op
+BenchmarkJson2Sql_BuildRaw-8                               29390             39416 ns/op           29289 B/op        507 allocs/op
+BenchmarkJson2Sql_Generate-8                               17575             67617 ns/op           41164 B/op        607 allocs/op
+BenchmarkJson2Sql_Union_BuildRaw-8                         13789             86378 ns/op           65804 B/op       1016 allocs/op
+BenchmarkJson2Sql_Union_Generate-8                          8659            131424 ns/op           76072 B/op       1143 allocs/op
+BenchmarkJson2Sql_BuildRaw_WithSanitizedSQLi-8              8269            146946 ns/op           49644 B/op        627 allocs/op
+BenchmarkJson2Sql_Generate_WithSanitizedSQLi-8              5640            211519 ns/op           61368 B/op        727 allocs/op
+BenchmarkJson2Sql_Union_BuildRaw_WithSanitizedSQLi-8        4190            282480 ns/op           87426 B/op       1137 allocs/op
+BenchmarkJson2Sql_Union_Generate_WithSanitizedSQLi-8        2959            401434 ns/op           97889 B/op       1263 allocs/op
 ```
