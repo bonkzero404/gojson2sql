@@ -9,36 +9,56 @@ import (
 	"unicode"
 )
 
+type Json2SqlConf struct {
+	withUnion              bool
+	withSanitizedInjection bool
+}
 type Json2Sql struct {
 	sqlJson            *SQLJson
 	sqlJsonSelectUnion *[]SQLJson
+	config             *Json2SqlConf
 }
 
-func NewJson2Sql(jsonData json.RawMessage, isUnion ...bool) (*Json2Sql, error) {
-	if isUnion != nil && isUnion[0] {
-		var sqlJsonUnion []SQLJson
+func NewJson2Sql(jsonData []byte, conf *Json2SqlConf) (*Json2Sql, error) {
+	var sqlJson *SQLJson
+	var sqlJsonUnion *[]SQLJson
 
-		err := json.Unmarshal([]byte(jsonData), &sqlJsonUnion)
+	if conf != nil && conf.withUnion {
+
+		err := json.Unmarshal(jsonData, &sqlJsonUnion)
 		if err != nil {
 			return nil, fmt.Errorf("error: %s", err)
 		}
-		return &Json2Sql{sqlJsonSelectUnion: &sqlJsonUnion}, nil
+	} else {
+
+		err := json.Unmarshal(jsonData, &sqlJson)
+
+		if err != nil {
+			return nil, fmt.Errorf("error: %s", err)
+		}
 	}
 
-	var sqlJson *SQLJson
-
-	err := json.Unmarshal(jsonData, &sqlJson)
-
-	if err != nil {
-		return nil, fmt.Errorf("error: %s", err)
-	}
-	return &Json2Sql{sqlJson: sqlJson}, nil
+	return &Json2Sql{
+		sqlJson:            sqlJson,
+		sqlJsonSelectUnion: sqlJsonUnion,
+		config:             conf,
+	}, nil
 }
 
 func cleanSpaces(input string) string {
 	words := strings.Fields(input)
 	result := strings.Join(words, " ")
 	return result
+}
+
+func sanitizeInjection(input string) string {
+	re := regexp.MustCompile(`(?i)[;]|--|drop\s*table|@@\s*version|insert\s*into|if\s*\(|sleep\s*\(|"|\/\*|\*\/|\\0|\\'|\\"|\\b|\\n|\\r|\\t|\\Z|\\\\|\\%|\\_`)
+	cleanedInput := re.ReplaceAllString(input, "")
+	return cleanedInput
+}
+
+func isValidSQL(input string) bool {
+	return sanitizeInjection(input) == input
 }
 
 func (jql *Json2Sql) JsonRawString(raw json.RawMessage) (string, bool) {
@@ -142,7 +162,7 @@ func (jql *Json2Sql) GenerateSelectFrom(selection ...json.RawMessage) string {
 		if len(selection) > 0 {
 			var selectFields []string
 			for _, selectField := range selection {
-				var field string
+				// var field string
 
 				field, isStringField := jql.JsonRawString(selectField)
 				if !isStringField {
@@ -157,9 +177,11 @@ func (jql *Json2Sql) GenerateSelectFrom(selection ...json.RawMessage) string {
 
 						if sqlSelectDetail.SubQuery != nil {
 							jsonBytes, _ := json.Marshal(*sqlSelectDetail.SubQuery)
-							jql, _ := NewJson2Sql(jsonBytes)
+
+							jql, _ := NewJson2Sql(jsonBytes, &Json2SqlConf{withSanitizedInjection: jql.config.withSanitizedInjection})
 
 							field = fmt.Sprintf("(%s) AS %s", jql.rawBuild(), *sqlSelectDetail.Alias)
+
 						}
 
 						if sqlSelectDetail.AddFunction != nil {
@@ -189,7 +211,7 @@ func (jql *Json2Sql) GenerateSelectFrom(selection ...json.RawMessage) string {
 									if isSelectExpect {
 										if selectExpect.SubQuery != nil {
 											jsonBytes, _ := json.Marshal(*selectExpect.SubQuery)
-											jql, _ := NewJson2Sql(jsonBytes)
+											jql, _ := NewJson2Sql(jsonBytes, &Json2SqlConf{withSanitizedInjection: jql.config.withSanitizedInjection})
 											defaultValue = fmt.Sprintf("(%s)", jql.rawBuild())
 										}
 									}
@@ -326,7 +348,7 @@ func (jql *Json2Sql) GenerateConditions(conditions ...Condition) string {
 				if isSelectSub {
 					if selectSub.SubQuery != nil {
 						jsonBytes, _ := json.Marshal(*selectSub.SubQuery)
-						jql, _ := NewJson2Sql(jsonBytes)
+						jql, _ := NewJson2Sql(jsonBytes, &Json2SqlConf{withSanitizedInjection: jql.config.withSanitizedInjection})
 						expression = string(condition.Operator) + " " + fmt.Sprintf("(%s)", jql.rawBuild())
 					}
 				}
@@ -350,7 +372,7 @@ func (jql *Json2Sql) GenerateConditions(conditions ...Condition) string {
 					if isSelectExpect {
 						if selectExpect.SubQuery != nil {
 							jsonBytes, _ := json.Marshal(*selectExpect.SubQuery)
-							jql, _ := NewJson2Sql(jsonBytes)
+							jql, _ := NewJson2Sql(jsonBytes, &Json2SqlConf{withSanitizedInjection: jql.config.withSanitizedInjection})
 							expect = fmt.Sprintf("(%s)", jql.rawBuild())
 						}
 					}
@@ -411,13 +433,21 @@ func (jql *Json2Sql) rawBuild() string {
 func (jql *Json2Sql) Build() string {
 	sqlCleanValue := jql.rawValueExtractor(jql.concateQueryString())
 
+	if jql.config != nil && jql.config.withSanitizedInjection && !isValidSQL(sqlCleanValue) {
+		return "Invalid sql string you've got sanitized SQL string"
+	}
+
 	return cleanSpaces(sqlCleanValue)
 }
 
 func (jql *Json2Sql) Generate() (string, []interface{}, error) {
 	sql := jql.rawBuild()
-	newQuery, values := jql.MaskedQueryValue(sql)
 
+	if jql.config != nil && jql.config.withSanitizedInjection && !isValidSQL(sql) {
+		return "", nil, fmt.Errorf("error: %s", "Invalid sql string you've got sanitized SQL string")
+	}
+
+	newQuery, values := jql.MaskedQueryValue(sql)
 	return newQuery, values, nil
 }
 
@@ -427,13 +457,14 @@ func (jql *Json2Sql) buildRawUnion() string {
 
 	if jql.sqlJsonSelectUnion != nil {
 		for _, v := range *jql.sqlJsonSelectUnion {
-			jql.sqlJson = &v
+			currentV := v
+			jql.sqlJson = &currentV
 			strBuild := jql.rawBuild()
 			sqlUnion = append(sqlUnion, strBuild)
 		}
 	}
 
-	jql.sqlJson = nil
+	// jql.sqlJson = nil
 	sql = strings.Join(sqlUnion, " UNION ")
 
 	return sql
@@ -442,11 +473,20 @@ func (jql *Json2Sql) buildRawUnion() string {
 func (jql *Json2Sql) BuildUnion() string {
 	sqlCleanValue := jql.rawValueExtractor(jql.buildRawUnion())
 
+	if jql.config != nil && jql.config.withSanitizedInjection && !isValidSQL(sqlCleanValue) {
+		return "Invalid sql string you've got sanitized SQL string"
+	}
+
 	return cleanSpaces(sqlCleanValue)
 }
 
 func (jql *Json2Sql) GenerateUnion() (string, []interface{}, error) {
 	sql := jql.buildRawUnion()
+
+	if jql.config != nil && jql.config.withSanitizedInjection && !isValidSQL(sql) {
+		return "", nil, fmt.Errorf("error: %s", "Invalid sql string you've got sanitized SQL string")
+	}
+
 	newQuery, values := jql.MaskedQueryValue(sql)
 
 	return newQuery, values, nil

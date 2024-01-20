@@ -10,17 +10,17 @@ import (
 )
 
 func TestConstructor(t *testing.T) {
-	var njql, _ = NewJson2Sql([]byte(`{"table":"test"}`))
+	var njql, _ = NewJson2Sql([]byte(`{"table":"test"}`), &Json2SqlConf{})
 	assert.Equal(t, "test", njql.sqlJson.Table)
 }
 
 func TestConstructor_Fail(t *testing.T) {
-	var _, err = NewJson2Sql([]byte(`{"table":"test"`))
+	var _, err = NewJson2Sql([]byte(`{"table":"test"`), &Json2SqlConf{})
 	assert.NotNil(t, err)
 }
 
 func TestConstructor_Fail_Union(t *testing.T) {
-	var _, err = NewJson2Sql([]byte(`[{"table":"test"`), true)
+	var _, err = NewJson2Sql([]byte(`[{"table":"test"`), &Json2SqlConf{withUnion: true})
 	assert.NotNil(t, err)
 }
 
@@ -68,7 +68,7 @@ func TestGenerateSelectFrom(t *testing.T) {
 	strTest := `{"table":"test"}`
 	strExpected := `SELECT * FROM test `
 
-	jql, _ := NewJson2Sql([]byte(strTest))
+	jql, _ := NewJson2Sql([]byte(strTest), &Json2SqlConf{})
 	str := jql.GenerateSelectFrom()
 
 	assert.Equal(t, strExpected, str)
@@ -122,7 +122,7 @@ func TestGenerateSelectFrom_Selection(t *testing.T) {
 	}`
 	strExpected := `SELECT a, b, c, d AS e, (SELECT id, name FROM users WHERE id = JQL_VALUE:1:END_JQL_VALUE LIMIT 1) AS user, (SELECT * FROM users WHERE id = JQL_VALUE:1:END_JQL_VALUE LIMIT 1) AS user FROM test`
 
-	jql, _ := NewJson2Sql([]byte(strTest))
+	jql, _ := NewJson2Sql([]byte(strTest), &Json2SqlConf{})
 	str := jql.GenerateSelectFrom()
 
 	assert.Equal(t, strings.TrimSpace(strExpected), strings.TrimSpace(str))
@@ -218,7 +218,7 @@ func TestGenerateSelectFrom_CaseWhenThen(t *testing.T) {
 	}`
 	strExpected := `SELECT CASE WHEN a > 100 THEN true WHEN b > 200 THEN 10 WHEN c > count(a.field) THEN sum(1000) WHEN c > 'A' THEN (SELECT * FROM users WHERE id = JQL_VALUE:1:END_JQL_VALUE LIMIT 1) ELSE 'NICE' END AS field_alias FROM test`
 
-	jql, _ := NewJson2Sql([]byte(strTest))
+	jql, _ := NewJson2Sql([]byte(strTest), &Json2SqlConf{})
 	str := jql.GenerateSelectFrom()
 
 	assert.Equal(t, strings.TrimSpace(strExpected), strings.TrimSpace(str))
@@ -268,7 +268,7 @@ func TestGenerateSelectFrom_CaseDefaultValueSub(t *testing.T) {
 	}`
 	strExpected := `SELECT CASE WHEN a > 100 THEN true ELSE (SELECT * FROM users WHERE id = JQL_VALUE:1:END_JQL_VALUE LIMIT 1) END AS field_alias FROM test`
 
-	jql, _ := NewJson2Sql([]byte(strTest))
+	jql, _ := NewJson2Sql([]byte(strTest), &Json2SqlConf{})
 	str := jql.GenerateSelectFrom()
 
 	assert.Equal(t, strings.TrimSpace(strExpected), strings.TrimSpace(str))
@@ -292,7 +292,7 @@ func TestGenerateSelectFrom_SqlFunc(t *testing.T) {
 	}`
 	strExpected := `SELECT COUNT(a) AS a_test FROM test`
 
-	jql, _ := NewJson2Sql([]byte(strTest))
+	jql, _ := NewJson2Sql([]byte(strTest), &Json2SqlConf{})
 	str := jql.GenerateSelectFrom()
 
 	assert.Equal(t, strings.TrimSpace(strExpected), strings.TrimSpace(str))
@@ -319,7 +319,7 @@ func TestSqlLikeAndBlankDatatype(t *testing.T) {
 	`
 
 	strExpected := `WHERE a LIKE JQL_VALUE:'%lorem ipsum%':END_JQL_VALUE b =`
-	jql, _ := NewJson2Sql([]byte(sqlTest))
+	jql, _ := NewJson2Sql([]byte(sqlTest), &Json2SqlConf{})
 	str := jql.GenerateWhere()
 
 	assert.Equal(t, strings.TrimSpace(strExpected), strings.TrimSpace(str))
@@ -347,7 +347,7 @@ func TestSqlLikeWithOperand(t *testing.T) {
 	`
 
 	strExpected := `WHERE b = JQL_VALUE:'lorem ipsum':END_JQL_VALUE AND a ILIKE JQL_VALUE:'%lorem ipsum%':END_JQL_VALUE`
-	jql, _ := NewJson2Sql([]byte(sqlTest))
+	jql, _ := NewJson2Sql([]byte(sqlTest), &Json2SqlConf{})
 	str := jql.GenerateWhere()
 
 	assert.Equal(t, strings.TrimSpace(strExpected), strings.TrimSpace(str))
@@ -371,7 +371,7 @@ func TestBetweenWithOperand(t *testing.T) {
 	`
 
 	strExpected := `WHERE a BETWEEN JQL_VALUE:1:END_JQL_VALUE AND JQL_VALUE:2:END_JQL_VALUE`
-	jql, _ := NewJson2Sql([]byte(sqlTest))
+	jql, _ := NewJson2Sql([]byte(sqlTest), &Json2SqlConf{})
 	str := jql.GenerateWhere()
 
 	assert.Equal(t, strings.TrimSpace(strExpected), strings.TrimSpace(str))
@@ -396,7 +396,7 @@ func TestCompositeWithoutOperand(t *testing.T) {
 	`
 
 	strExpected := `WHERE (a = JQL_VALUE:'b':END_JQL_VALUE)`
-	jql, _ := NewJson2Sql([]byte(sqlTest))
+	jql, _ := NewJson2Sql([]byte(sqlTest), &Json2SqlConf{})
 	str := jql.GenerateWhere()
 
 	assert.Equal(t, strings.TrimSpace(strExpected), strings.TrimSpace(str))
@@ -406,7 +406,7 @@ func TestGenerateOrderBy(t *testing.T) {
 	strTest := `{"orderBy": {"fields":["a.b"]}}`
 	strExpected := `ORDER BY a.b`
 
-	jql, _ := NewJson2Sql([]byte(strTest))
+	jql, _ := NewJson2Sql([]byte(strTest), &Json2SqlConf{})
 	str := jql.GenerateOrderBy()
 
 	assert.Equal(t, strExpected, strings.TrimSpace(str))
@@ -416,7 +416,7 @@ func TestGenerateOrderBy_WithSort(t *testing.T) {
 	strTest := `{"orderBy": {"fields":["a.b"],"sort":"ASC"}}`
 	strExpected := `ORDER BY a.b ASC`
 
-	jql, _ := NewJson2Sql([]byte(strTest))
+	jql, _ := NewJson2Sql([]byte(strTest), &Json2SqlConf{})
 	str := jql.GenerateOrderBy()
 
 	assert.Equal(t, strExpected, strings.TrimSpace(str))
@@ -426,7 +426,7 @@ func TestGenerateGroupBy(t *testing.T) {
 	strTest := `{"groupBy": {"fields":["a"]}}`
 	strExpected := `GROUP BY a`
 
-	jql, _ := NewJson2Sql([]byte(strTest))
+	jql, _ := NewJson2Sql([]byte(strTest), &Json2SqlConf{})
 	str := jql.GenerateGroupBy()
 
 	assert.Equal(t, strExpected, strings.TrimSpace(str))
@@ -449,7 +449,7 @@ func TestGenerateJoin_JOIN(t *testing.T) {
 	}`
 	strExpected := `JOIN t2 ON a = b  JOIN t1 ON b = a`
 
-	jql, _ := NewJson2Sql([]byte(strTest))
+	jql, _ := NewJson2Sql([]byte(strTest), &Json2SqlConf{})
 	str := jql.GenerateJoin()
 
 	assert.Equal(t, strExpected, strings.TrimSpace(str))
@@ -472,7 +472,7 @@ func TestGenerateJoin_INNER_JOIN(t *testing.T) {
 	}`
 	strExpected := `INNER JOIN t2 ON a = b  INNER JOIN t1 ON b = a`
 
-	jql, _ := NewJson2Sql([]byte(strTest))
+	jql, _ := NewJson2Sql([]byte(strTest), &Json2SqlConf{})
 	str := jql.GenerateJoin()
 
 	assert.Equal(t, strExpected, strings.TrimSpace(str))
@@ -495,7 +495,7 @@ func TestGenerateJoin_LEFT_JOIN(t *testing.T) {
 	}`
 	strExpected := `LEFT JOIN t2 ON a = b  LEFT JOIN t1 ON b = a`
 
-	jql, _ := NewJson2Sql([]byte(strTest))
+	jql, _ := NewJson2Sql([]byte(strTest), &Json2SqlConf{})
 	str := jql.GenerateJoin()
 
 	assert.Equal(t, strExpected, strings.TrimSpace(str))
@@ -518,7 +518,7 @@ func TestGenerateJoin_RIGHT_JOIN(t *testing.T) {
 	}`
 	strExpected := `RIGHT JOIN t2 ON a = b  RIGHT JOIN t1 ON b = a`
 
-	jql, _ := NewJson2Sql([]byte(strTest))
+	jql, _ := NewJson2Sql([]byte(strTest), &Json2SqlConf{})
 	str := jql.GenerateJoin()
 
 	assert.Equal(t, strExpected, strings.TrimSpace(str))
@@ -557,7 +557,7 @@ func TestGenerateHaving(t *testing.T) {
 	}`
 	strExpected := `HAVING COUNT(a) > JQL_VALUE:100:END_JQL_VALUE AND SUM(a) > JQL_VALUE:100:END_JQL_VALUE`
 
-	jql, _ := NewJson2Sql([]byte(strTest))
+	jql, _ := NewJson2Sql([]byte(strTest), &Json2SqlConf{})
 	str := jql.GenerateHaving()
 
 	assert.Equal(t, strExpected, strings.TrimSpace(str))
@@ -593,7 +593,7 @@ func TestGenerateWhere(t *testing.T) {
 	}`
 	strExpected := `WHERE a = JQL_VALUE:'b':END_JQL_VALUE users.birthdate BETWEEN JQL_VALUE:'2015-01-01':END_JQL_VALUE AND JQL_VALUE:'2021-01-01':END_JQL_VALUE AND c = JQL_VALUE:'d':END_JQL_VALUE`
 
-	jql, _ := NewJson2Sql([]byte(strTest))
+	jql, _ := NewJson2Sql([]byte(strTest), &Json2SqlConf{})
 	str := jql.GenerateWhere()
 
 	assert.Equal(t, strExpected, strings.TrimSpace(str))
@@ -654,7 +654,7 @@ func TestGenerateConditions(t *testing.T) {
 	`
 	strExpected := `users.id = JQL_VALUE:1:END_JQL_VALUE AND gender.gender_name = JQL_VALUE:'female':END_JQL_VALUE AND transaction.total > sum(JQL_VALUE:100:END_JQL_VALUE) OR (users.birthdate BETWEEN JQL_VALUE:'2015-01-01':END_JQL_VALUE AND JQL_VALUE:'2021-01-01':END_JQL_VALUE AND users.status = JQL_VALUE:'active':END_JQL_VALUE)`
 
-	jql, _ := NewJson2Sql([]byte(strTest))
+	jql, _ := NewJson2Sql([]byte(strTest), &Json2SqlConf{})
 	str := jql.GenerateConditions()
 
 	assert.Equal(t, strExpected, strings.TrimSpace(str))
@@ -688,7 +688,7 @@ func TestGenerateConditions_SubQuery(t *testing.T) {
 	`
 	strExpected := `users.id = (SELECT * FROM users WHERE id = JQL_VALUE:1:END_JQL_VALUE LIMIT 1)`
 
-	jql, _ := NewJson2Sql([]byte(strTest))
+	jql, _ := NewJson2Sql([]byte(strTest), &Json2SqlConf{})
 	str := jql.GenerateConditions()
 
 	assert.Equal(t, strExpected, strings.TrimSpace(str))
@@ -703,7 +703,7 @@ func TestLimit_Static(t *testing.T) {
 	}`
 	strExpected := `LIMIT 10`
 
-	jql, _ := NewJson2Sql([]byte(strTest))
+	jql, _ := NewJson2Sql([]byte(strTest), &Json2SqlConf{})
 	str := jql.GenerateLimit()
 
 	assert.Equal(t, strExpected, strings.TrimSpace(str))
@@ -717,7 +717,7 @@ func TestLimit_ToParam(t *testing.T) {
 	}`
 	strExpected := `LIMIT JQL_VALUE:10:END_JQL_VALUE`
 
-	jql, _ := NewJson2Sql([]byte(strTest))
+	jql, _ := NewJson2Sql([]byte(strTest), &Json2SqlConf{})
 	str := jql.GenerateLimit()
 
 	assert.Equal(t, strExpected, strings.TrimSpace(str))
@@ -732,7 +732,7 @@ func TestOffset_Static(t *testing.T) {
 	}`
 	strExpected := `OFFSET 10`
 
-	jql, _ := NewJson2Sql([]byte(strTest))
+	jql, _ := NewJson2Sql([]byte(strTest), &Json2SqlConf{})
 	str := jql.GenerateOffset()
 
 	assert.Equal(t, strExpected, strings.TrimSpace(str))
@@ -746,7 +746,7 @@ func TestOffset_ToParam(t *testing.T) {
 	}`
 	strExpected := `OFFSET JQL_VALUE:10:END_JQL_VALUE`
 
-	jql, _ := NewJson2Sql([]byte(strTest))
+	jql, _ := NewJson2Sql([]byte(strTest), &Json2SqlConf{})
 	str := jql.GenerateOffset()
 
 	assert.Equal(t, strExpected, strings.TrimSpace(str))
@@ -893,7 +893,7 @@ func TestBuildJsonToSql(t *testing.T) {
 		}
 	`
 
-	jql, _ := NewJson2Sql([]byte(jsonData))
+	jql, _ := NewJson2Sql([]byte(jsonData), &Json2SqlConf{})
 	sql := jql.Build()
 
 	strExpectation := "SELECT table_1.a, table_1.b AS foo_bar, (SELECT * FROM table_4 WHERE a = 1 LIMIT 1) AS baz, table_2.b, table_3.a, table_3.b FROM table_1 JOIN table_2 ON table_2.a = table_1.a LEFT JOIN table_3 ON table_3.a = table_2.a WHERE table_1.a = 'foo' AND table_1.b = true AND table_2.a > sum(100) AND table_2.b = (SELECT * FROM table_4 WHERE a = 1 LIMIT 1) OR (table_3.a BETWEEN '2020-01-01' AND '2023-01-01' AND table_3.b = 2) GROUP BY table_1.a HAVING COUNT(table_2.a) > 10 ORDER BY table_1.a, table_2.a ASC LIMIT 1 OFFSET 0"
@@ -1041,7 +1041,7 @@ func TestGenerateJsonToSql(t *testing.T) {
 		}
 	`
 
-	jql, _ := NewJson2Sql([]byte(jsonData))
+	jql, _ := NewJson2Sql([]byte(jsonData), &Json2SqlConf{})
 	sql, filter, _ := jql.Generate()
 
 	strExpectation := "SELECT table_1.a, table_1.b AS foo_bar, (SELECT * FROM table_4 WHERE a = ? LIMIT 1) AS baz, table_2.b, table_3.a, table_3.b FROM table_1 JOIN table_2 ON table_2.a = table_1.a LEFT JOIN table_3 ON table_3.a = table_2.a WHERE table_1.a = ? AND table_1.b = ? AND table_2.a > sum(?) AND table_2.b = (SELECT * FROM table_4 WHERE a = ? LIMIT 1) OR (table_3.a BETWEEN ? AND ? AND table_3.b = ?) GROUP BY table_1.a HAVING COUNT(table_2.a) > ? ORDER BY table_1.a, table_2.a ASC LIMIT 1 OFFSET 0"
@@ -1056,7 +1056,28 @@ func TestBuildRawUnion(t *testing.T) {
 				"table": "table_1",
 				"selectFields": [
 					"a",
-					"b"
+					"b",
+          {
+            "field": "table_1.b",
+            "alias": "foo_bar"
+          },
+          {
+            "field": "table_2.a",
+            "alias": "baz",
+            "subquery": {
+              "table": "table_4",
+              "selectFields": ["a","b"],
+              "conditions": [
+                {
+                  "datatype": "number",
+                  "clause": "a",
+                  "operator": "=",
+                  "value": 1
+                }
+              ],
+              "limit": 1
+            }
+          }
 				],
 				"conditions": [
 					{
@@ -1072,7 +1093,28 @@ func TestBuildRawUnion(t *testing.T) {
 				"table": "table_2",
 				"selectFields": [
 					"a",
-					"b"
+					"b",
+          {
+            "field": "table_1.b",
+            "alias": "foo_bar"
+          },
+          {
+            "field": "table_2.a",
+            "alias": "baz",
+            "subquery": {
+              "table": "table_4",
+              "selectFields": ["a","b"],
+              "conditions": [
+                {
+                  "datatype": "number",
+                  "clause": "a",
+                  "operator": "=",
+                  "value": 1
+                }
+              ],
+              "limit": 1
+            }
+          }
 				],
 				"conditions": [
 					{
@@ -1087,10 +1129,10 @@ func TestBuildRawUnion(t *testing.T) {
 		]
 	`
 
-	jql, _ := NewJson2Sql([]byte(jsonData), true)
+	jql, _ := NewJson2Sql([]byte(jsonData), &Json2SqlConf{withUnion: true})
 	sql := jql.BuildUnion()
 
-	strExpectation := "SELECT a, b FROM table_1 WHERE a = 1 LIMIT 1 UNION SELECT a, b FROM table_2 WHERE a = 1 LIMIT 1"
+	strExpectation := "SELECT a, b, table_1.b AS foo_bar, (SELECT a, b FROM table_4 WHERE a = 1 LIMIT 1) AS baz FROM table_1 WHERE a = 1 LIMIT 1 UNION SELECT a, b, table_1.b AS foo_bar, (SELECT a, b FROM table_4 WHERE a = 1 LIMIT 1) AS baz FROM table_2 WHERE a = 1 LIMIT 1"
 
 	assert.Equal(t, strExpectation, sql)
 }
@@ -1133,11 +1175,155 @@ func TestGenerateUnion(t *testing.T) {
 		]
 	`
 
-	jql, _ := NewJson2Sql([]byte(jsonData), true)
+	jql, _ := NewJson2Sql([]byte(jsonData), &Json2SqlConf{withUnion: true})
 	sql, filter, _ := jql.GenerateUnion()
 
 	strExpectation := "SELECT a, b FROM table_1 WHERE a = ? LIMIT 1 UNION SELECT a, b FROM table_2 WHERE a = ? LIMIT 1"
 
 	assert.Equal(t, strExpectation, sql)
 	assert.Equal(t, []interface{}{float64(1), float64(1)}, filter)
+}
+
+func TestGenerateBuild_PreventInjection(t *testing.T) {
+	jsonData := `
+    {
+      "table": "table_2",
+      "selectFields": [
+        "a",
+        "b;drop table table_2 --"
+      ],
+      "conditions": [
+        {
+          "datatype": "number",
+          "clause": "a",
+          "operator": "=",
+          "value": 1
+        }
+      ],
+      "limit": 1
+    }
+	`
+
+	jql, _ := NewJson2Sql([]byte(jsonData), &Json2SqlConf{withSanitizedInjection: true})
+	sql := jql.Build()
+
+	strExpectation := "Invalid sql string you've got sanitized SQL string"
+
+	assert.Equal(t, strExpectation, sql)
+}
+
+func TestGenerate_PreventInjection(t *testing.T) {
+	jsonData := `
+    {
+      "table": "table_2",
+      "selectFields": [
+        "a",
+        "b;drop table table_2 --"
+      ],
+      "conditions": [
+        {
+          "datatype": "number",
+          "clause": "a",
+          "operator": "=",
+          "value": 1
+        }
+      ],
+      "limit": 1
+    }
+	`
+
+	jql, _ := NewJson2Sql([]byte(jsonData), &Json2SqlConf{withSanitizedInjection: true})
+	_, _, err := jql.Generate()
+
+	assert.NotNil(t, err)
+}
+
+func TestGenerateBuildUnion_PreventInjection(t *testing.T) {
+	jsonData := `
+    [
+      {
+        "table": "table_2",
+        "selectFields": [
+          "a",
+          "b;drop table table_2 --"
+        ],
+        "conditions": [
+          {
+            "datatype": "number",
+            "clause": "a",
+            "operator": "=",
+            "value": 1
+          }
+        ],
+        "limit": 1
+      },
+      {
+        "table": "table_2",
+        "selectFields": [
+          "a",
+          "b;drop table table_2 --"
+        ],
+        "conditions": [
+          {
+            "datatype": "number",
+            "clause": "a",
+            "operator": "=",
+            "value": 1
+          }
+        ],
+        "limit": 1
+      }
+    ]
+	`
+
+	jql, _ := NewJson2Sql([]byte(jsonData), &Json2SqlConf{withSanitizedInjection: true, withUnion: true})
+	sql := jql.BuildUnion()
+
+	strExpectation := "Invalid sql string you've got sanitized SQL string"
+
+	assert.Equal(t, strExpectation, sql)
+}
+
+func TestGenerateUnion_PreventInjection(t *testing.T) {
+	jsonData := `
+    [
+      {
+        "table": "table_2",
+        "selectFields": [
+          "a",
+          "b;drop table table_2 --"
+        ],
+        "conditions": [
+          {
+            "datatype": "number",
+            "clause": "a",
+            "operator": "=",
+            "value": 1
+          }
+        ],
+        "limit": 1
+      },
+      {
+        "table": "table_2",
+        "selectFields": [
+          "a",
+          "b;drop table table_2 --"
+        ],
+        "conditions": [
+          {
+            "datatype": "number",
+            "clause": "a",
+            "operator": "=",
+            "value": 1
+          }
+        ],
+        "limit": 1
+      }
+    ]
+	`
+
+	jql, _ := NewJson2Sql([]byte(jsonData), &Json2SqlConf{withSanitizedInjection: true, withUnion: true})
+	_, _, err := jql.GenerateUnion()
+
+	assert.NotNil(t, err)
 }
