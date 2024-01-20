@@ -8,7 +8,20 @@ GoJson2SQL is a library for composing SQL queries using JSON. A JSON file is tra
 
 ## Limitations
 
-Currently, it can only perform select queries.
+Currently, it can only perform **SELECT** queries.
+
+## Features
+
+- Basic select query
+- Basic selection field
+- Join Table
+- Conditional (WHERE Statement)
+- HAVING
+- SQL Function
+- CASE, WHEN and THEN in the selection fields
+- Subqueries
+- Parsing Value to Parameters
+- SQLi Prevention (Experimental)
 
 ## TODO:
 
@@ -34,33 +47,33 @@ import (
 )
 
 func main() {
-	sqlJson := `
-		{
-			"table": "table_1",
-			"selectFields": [
-				"a",
-				"b"
-			],
-			"conditions": [
-				{
-					"datatype": "number",
-					"clause": "a",
-					"operator": "=",
-					"value": 1
-				}
-			],
-			"limit": 1
-		}
-	`
-	jql, err := gojson2sql.NewJson2Sql([]byte(sqlJson))
-	if err != nil {
-		panic(err)
-	}
+  sqlJson := `
+    {
+      "table": "table_1",
+      "selectFields": [
+        "a",
+        "b"
+      ],
+      "conditions": [
+        {
+          "datatype": "number",
+          "clause": "a",
+          "operator": "=",
+          "value": 1
+        }
+      ],
+      "limit": 1
+    }
+  `
+  jql, err := gojson2sql.NewJson2Sql([]byte(sqlJson), &gojson2sql.Json2SqlConf{})
+  if err != nil {
+    panic(err)
+  }
 
-	sql, param, _ := jql.Generate()
+  sql, param, _ := jql.Generate()
 
-	fmt.Println("SQL:", sql)
-	fmt.Println("Param:", param)
+  fmt.Println("SQL:", sql)
+  fmt.Println("Param:", param)
 }
 ```
 
@@ -74,7 +87,7 @@ Param: [1]
 You can use this raw SQL with either the sql package or GORM. Here's an example with sql package:
 
 ```go
-jql, _ := gojson2sql.NewJson2Sql([]byte(sqlJson))
+jql, _ := gojson2sql.NewJson2Sql([]byte(sqlJson), &gojson2sql.Json2SqlConf{})
 sql, param, _ := jql.Generate()
 
 db.Query(sql, param)
@@ -113,6 +126,17 @@ db.Query(sql, param)
 ]
 ```
 
+If you are using **UNION**, you must set the withUnion parameter in Json2SqlConf. Here is an example:
+
+```go
+jql, _ := gojson2sql.NewJson2Sql([]byte(sqlJson), &gojson2sql.Json2SqlConf{
+  withUnion: true,
+})
+sql, param, _ := jql.Generate()
+
+db.Query(sql, param)
+```
+
 Output:
 
 ```sql
@@ -120,6 +144,17 @@ SELECT a, b FROM table_1 WHERE a = 1 LIMIT 1 UNION SELECT a, b FROM table_2 WHER
 ```
 
 You can see the difference between a union query and a standard select. In a union, you must use a JSON array with the standard JSON format as before.
+
+## Config Parameters
+
+```go
+withUnion              bool
+withSanitizedInjection bool
+```
+
+**withUnion**: It is used to set the query to union and the structure must be of array type.
+
+**withSanitizedInjection**: This is an experimental feature, it is far from perfect, and it serves to validate SQL strings against SQL Injection.
 
 ## Operator Lists
 
@@ -364,7 +399,7 @@ In general, the structure of the JSON format used is as follows:
 You can also convert to raw query without parameters.
 
 ```go
-jql, err := gojson2sql.NewJson2Sql([]byte(sqlJson))
+jql, err := gojson2sql.NewJson2Sql([]byte(sqlJson), &gojson2sql.Json2SqlConf{})
 if err != nil {
   panic(err)
 }
@@ -522,7 +557,7 @@ sqlJson := `
     "offset": 0
   }
 `
-jql, err := gojson2sql.NewJson2Sql([]byte(sqlJson))
+jql, err := gojson2sql.NewJson2Sql([]byte(sqlJson), &gojson2sql.Json2SqlConf{})
 if err != nil {
   panic(err)
 }
@@ -853,6 +888,14 @@ OFFSET 0
 --- PASS: TestBuildRawUnion (0.00s)
 === RUN   TestGenerateUnion
 --- PASS: TestGenerateUnion (0.00s)
+=== RUN   TestGenerateBuild_PreventInjection
+--- PASS: TestGenerateBuild_PreventInjection (0.00s)
+=== RUN   TestGenerate_PreventInjection
+--- PASS: TestGenerate_PreventInjection (0.00s)
+=== RUN   TestGenerateBuildUnion_PreventInjection
+--- PASS: TestGenerateBuildUnion_PreventInjection (0.00s)
+=== RUN   TestGenerateUnion_PreventInjection
+--- PASS: TestGenerateUnion_PreventInjection (0.00s)
 === RUN   TestIsValidDataType
 --- PASS: TestIsValidDataType (0.00s)
 === RUN   TestGetValueFromDataType
@@ -886,8 +929,12 @@ Specs:
 goos: darwin
 goarch: arm64
 pkg: github.com/bonkzero404/gojson2sql
-BenchmarkJson2Sql_BuildRaw-8               12708             93796 ns/op           32254 B/op        557 allocs/op
-BenchmarkJson2Sql_Generate-8                9804            121693 ns/op           43773 B/op        656 allocs/op
-BenchmarkJson2Sql_Union_BuildRaw-8          6015            196128 ns/op           70700 B/op       1106 allocs/op
-BenchmarkJson2Sql_Union_Generate-8          4876            240539 ns/op           80684 B/op       1232 allocs/op
+BenchmarkJson2Sql_BuildRaw-8                               12331            105328 ns/op           32367 B/op        563 allocs/op
+BenchmarkJson2Sql_Generate-8                                9469            122841 ns/op           43908 B/op        662 allocs/op
+BenchmarkJson2Sql_Union_BuildRaw-8                          5832            200529 ns/op           71018 B/op       1118 allocs/op
+BenchmarkJson2Sql_Union_Generate-8                          4783            244807 ns/op           80860 B/op       1244 allocs/op
+BenchmarkJson2Sql_BuildRaw_WithSanitizedSQLi-8              5600            205645 ns/op           52442 B/op        683 allocs/op
+BenchmarkJson2Sql_Generate_WithSanitizedSQLi-8              4513            280251 ns/op           64269 B/op        782 allocs/op
+BenchmarkJson2Sql_Union_BuildRaw_WithSanitizedSQLi-8        2888            395167 ns/op           92439 B/op       1238 allocs/op
+BenchmarkJson2Sql_Union_Generate_WithSanitizedSQLi-8        2209            516783 ns/op          102815 B/op       1364 allocs/op
 ```
