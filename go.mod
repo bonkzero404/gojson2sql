@@ -2,7 +2,10 @@ module github.com/bonkzero404/gojson2sql
 
 go 1.20
 
-require github.com/stretchr/testify v1.8.4
+require (
+	github.com/goccy/go-json v0.10.2
+	github.com/stretchr/testify v1.8.4
+)
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect

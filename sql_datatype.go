@@ -1,10 +1,11 @@
 package gojson2sql
 
 import (
-	"encoding/json"
 	"errors"
 	"strconv"
 	"strings"
+
+	"github.com/goccy/go-json"
 )
 
 var JQL_FLAG_OPEN = "JQL_VALUE:"

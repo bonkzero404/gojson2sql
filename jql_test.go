@@ -1,11 +1,11 @@
 package gojson2sql
 
 import (
-	"encoding/json"
 	"reflect"
 	"strings"
 	"testing"
 
+	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
 )
 

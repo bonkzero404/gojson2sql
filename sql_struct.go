@@ -1,6 +1,6 @@
 package gojson2sql
 
-import "encoding/json"
+import "github.com/goccy/go-json"
 
 type Condition struct {
 	Operand     *string           `json:"operand"`

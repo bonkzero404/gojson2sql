@@ -1,12 +1,13 @@
 package gojson2sql
 
 import (
-	"encoding/json"
 	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
 	"unicode"
+
+	"github.com/goccy/go-json"
 )
 
 type Json2SqlConf struct {

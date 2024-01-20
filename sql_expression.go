@@ -1,8 +1,9 @@
 package gojson2sql
 
 import (
-	"encoding/json"
 	"strings"
+
+	"github.com/goccy/go-json"
 )
 
 func GetSqlExpression(operator SQLOperatorEnum, datatype SQLDataTypeEnum, isStatic bool, value ...json.RawMessage) string {
