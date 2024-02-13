@@ -20,7 +20,7 @@ func TestConstructor_Fail(t *testing.T) {
 }
 
 func TestConstructor_Fail_Union(t *testing.T) {
-	var _, err = NewJson2Sql([]byte(`[{"table":"test"`), &Json2SqlConf{withUnion: true})
+	var _, err = NewJson2Sql([]byte(`[{"table":"test"`), &Json2SqlConf{WithUnion: true})
 	assert.NotNil(t, err)
 }
 
@@ -1158,7 +1158,7 @@ func TestBuildRawUnion(t *testing.T) {
 		]
 	`
 
-	jql, _ := NewJson2Sql([]byte(jsonData), &Json2SqlConf{withUnion: true})
+	jql, _ := NewJson2Sql([]byte(jsonData), &Json2SqlConf{WithUnion: true})
 	sql := jql.BuildUnion()
 
 	strExpectation := "SELECT a, b, table_1.b AS foo_bar, (SELECT a, b FROM table_4 WHERE a = 1 LIMIT 1) AS baz FROM table_1 WHERE a = 1 LIMIT 1 UNION SELECT a, b, table_1.b AS foo_bar, (SELECT a, b FROM table_4 WHERE a = 1 LIMIT 1) AS baz FROM table_2 WHERE a = 1 LIMIT 1"
@@ -1204,7 +1204,7 @@ func TestGenerateUnion(t *testing.T) {
 		]
 	`
 
-	jql, _ := NewJson2Sql([]byte(jsonData), &Json2SqlConf{withUnion: true})
+	jql, _ := NewJson2Sql([]byte(jsonData), &Json2SqlConf{WithUnion: true})
 	sql, filter, _ := jql.GenerateUnion()
 
 	strExpectation := "SELECT a, b FROM table_1 WHERE a = ? LIMIT 1 UNION SELECT a, b FROM table_2 WHERE a = ? LIMIT 1"
@@ -1233,7 +1233,7 @@ func TestGenerateBuild_PreventInjection(t *testing.T) {
     }
 	`
 
-	jql, _ := NewJson2Sql([]byte(jsonData), &Json2SqlConf{withSanitizedInjection: true})
+	jql, _ := NewJson2Sql([]byte(jsonData), &Json2SqlConf{WithSanitizedInjection: true})
 	sql := jql.Build()
 
 	strExpectation := "Invalid sql string you've got sanitized SQL string"
@@ -1261,7 +1261,7 @@ func TestGenerate_PreventInjection(t *testing.T) {
     }
 	`
 
-	jql, _ := NewJson2Sql([]byte(jsonData), &Json2SqlConf{withSanitizedInjection: true})
+	jql, _ := NewJson2Sql([]byte(jsonData), &Json2SqlConf{WithSanitizedInjection: true})
 	_, _, err := jql.Generate()
 
 	assert.NotNil(t, err)
@@ -1305,7 +1305,7 @@ func TestGenerateBuildUnion_PreventInjection(t *testing.T) {
     ]
 	`
 
-	jql, _ := NewJson2Sql([]byte(jsonData), &Json2SqlConf{withSanitizedInjection: true, withUnion: true})
+	jql, _ := NewJson2Sql([]byte(jsonData), &Json2SqlConf{WithSanitizedInjection: true, WithUnion: true})
 	sql := jql.BuildUnion()
 
 	strExpectation := "Invalid sql string you've got sanitized SQL string"
@@ -1351,7 +1351,7 @@ func TestGenerateUnion_PreventInjection(t *testing.T) {
     ]
 	`
 
-	jql, _ := NewJson2Sql([]byte(jsonData), &Json2SqlConf{withSanitizedInjection: true, withUnion: true})
+	jql, _ := NewJson2Sql([]byte(jsonData), &Json2SqlConf{WithSanitizedInjection: true, WithUnion: true})
 	_, _, err := jql.GenerateUnion()
 
 	assert.NotNil(t, err)

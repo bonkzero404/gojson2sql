@@ -11,8 +11,8 @@ import (
 )
 
 type Json2SqlConf struct {
-	withUnion              bool
-	withSanitizedInjection bool
+	WithUnion              bool
+	WithSanitizedInjection bool
 }
 type Json2Sql struct {
 	sqlJson            *SQLJson
@@ -24,7 +24,7 @@ func NewJson2Sql(jsonData []byte, conf *Json2SqlConf) (*Json2Sql, error) {
 	var sqlJson *SQLJson
 	var sqlJsonUnion *[]SQLJson
 
-	if conf != nil && conf.withUnion {
+	if conf != nil && conf.WithUnion {
 
 		err := json.Unmarshal(jsonData, &sqlJsonUnion)
 		if err != nil {
@@ -185,7 +185,7 @@ func (jql *Json2Sql) GenerateSelectFrom(selection ...json.RawMessage) string {
 						if sqlSelectDetail.SubQuery != nil {
 							jsonBytes, _ := json.Marshal(*sqlSelectDetail.SubQuery)
 
-							jql, _ := NewJson2Sql(jsonBytes, &Json2SqlConf{withSanitizedInjection: jql.config.withSanitizedInjection})
+							jql, _ := NewJson2Sql(jsonBytes, &Json2SqlConf{WithSanitizedInjection: jql.config.WithSanitizedInjection})
 
 							field = fmt.Sprintf("(%s) AS %s", jql.rawBuild(), *sqlSelectDetail.Alias)
 
@@ -218,7 +218,7 @@ func (jql *Json2Sql) GenerateSelectFrom(selection ...json.RawMessage) string {
 									if isSelectExpect {
 										if selectExpect.SubQuery != nil {
 											jsonBytes, _ := json.Marshal(*selectExpect.SubQuery)
-											jql, _ := NewJson2Sql(jsonBytes, &Json2SqlConf{withSanitizedInjection: jql.config.withSanitizedInjection})
+											jql, _ := NewJson2Sql(jsonBytes, &Json2SqlConf{WithSanitizedInjection: jql.config.WithSanitizedInjection})
 											defaultValue = fmt.Sprintf("(%s)", jql.rawBuild())
 										}
 									}
@@ -355,7 +355,7 @@ func (jql *Json2Sql) GenerateConditions(conditions ...Condition) string {
 				if isSelectSub {
 					if selectSub.SubQuery != nil {
 						jsonBytes, _ := json.Marshal(*selectSub.SubQuery)
-						jql, _ := NewJson2Sql(jsonBytes, &Json2SqlConf{withSanitizedInjection: jql.config.withSanitizedInjection})
+						jql, _ := NewJson2Sql(jsonBytes, &Json2SqlConf{WithSanitizedInjection: jql.config.WithSanitizedInjection})
 						expression = string(condition.Operator) + " " + fmt.Sprintf("(%s)", jql.rawBuild())
 					}
 				}
@@ -379,7 +379,7 @@ func (jql *Json2Sql) GenerateConditions(conditions ...Condition) string {
 					if isSelectExpect {
 						if selectExpect.SubQuery != nil {
 							jsonBytes, _ := json.Marshal(*selectExpect.SubQuery)
-							jql, _ := NewJson2Sql(jsonBytes, &Json2SqlConf{withSanitizedInjection: jql.config.withSanitizedInjection})
+							jql, _ := NewJson2Sql(jsonBytes, &Json2SqlConf{WithSanitizedInjection: jql.config.WithSanitizedInjection})
 							expect = fmt.Sprintf("(%s)", jql.rawBuild())
 						}
 					}
@@ -440,7 +440,7 @@ func (jql *Json2Sql) rawBuild() string {
 func (jql *Json2Sql) Build() string {
 	sqlCleanValue := jql.rawValueExtractor(jql.concateQueryString())
 
-	if jql.config != nil && jql.config.withSanitizedInjection && !isValidSQL(sqlCleanValue) {
+	if jql.config != nil && jql.config.WithSanitizedInjection && !isValidSQL(sqlCleanValue) {
 		return "Invalid sql string you've got sanitized SQL string"
 	}
 
@@ -450,7 +450,7 @@ func (jql *Json2Sql) Build() string {
 func (jql *Json2Sql) Generate() (string, []interface{}, error) {
 	sql := jql.rawBuild()
 
-	if jql.config != nil && jql.config.withSanitizedInjection && !isValidSQL(sql) {
+	if jql.config != nil && jql.config.WithSanitizedInjection && !isValidSQL(sql) {
 		return "", nil, fmt.Errorf("error: %s", "Invalid sql string you've got sanitized SQL string")
 	}
 
@@ -480,7 +480,7 @@ func (jql *Json2Sql) buildRawUnion() string {
 func (jql *Json2Sql) BuildUnion() string {
 	sqlCleanValue := jql.rawValueExtractor(jql.buildRawUnion())
 
-	if jql.config != nil && jql.config.withSanitizedInjection && !isValidSQL(sqlCleanValue) {
+	if jql.config != nil && jql.config.WithSanitizedInjection && !isValidSQL(sqlCleanValue) {
 		return "Invalid sql string you've got sanitized SQL string"
 	}
 
@@ -490,7 +490,7 @@ func (jql *Json2Sql) BuildUnion() string {
 func (jql *Json2Sql) GenerateUnion() (string, []interface{}, error) {
 	sql := jql.buildRawUnion()
 
-	if jql.config != nil && jql.config.withSanitizedInjection && !isValidSQL(sql) {
+	if jql.config != nil && jql.config.WithSanitizedInjection && !isValidSQL(sql) {
 		return "", nil, fmt.Errorf("error: %s", "Invalid sql string you've got sanitized SQL string")
 	}
 

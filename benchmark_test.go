@@ -162,7 +162,7 @@ func BenchmarkJson2Sql_Union_BuildRaw(b *testing.B) {
 	var newData = "[" + jsonData + "," + jsonData + "]"
 
 	for i := 0; i < b.N; i++ {
-		jql, _ := NewJson2Sql([]byte(newData), &Json2SqlConf{withUnion: true})
+		jql, _ := NewJson2Sql([]byte(newData), &Json2SqlConf{WithUnion: true})
 		jql.BuildUnion()
 	}
 }
@@ -170,21 +170,21 @@ func BenchmarkJson2Sql_Union_BuildRaw(b *testing.B) {
 func BenchmarkJson2Sql_Union_Generate(b *testing.B) {
 	var newData = "[" + jsonData + "," + jsonData + "]"
 	for i := 0; i < b.N; i++ {
-		jql, _ := NewJson2Sql([]byte(newData), &Json2SqlConf{withUnion: true})
+		jql, _ := NewJson2Sql([]byte(newData), &Json2SqlConf{WithUnion: true})
 		jql.GenerateUnion()
 	}
 }
 
 func BenchmarkJson2Sql_BuildRaw_WithSanitizedSQLi(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		jql, _ := NewJson2Sql([]byte(jsonData), &Json2SqlConf{withSanitizedInjection: true})
+		jql, _ := NewJson2Sql([]byte(jsonData), &Json2SqlConf{WithSanitizedInjection: true})
 		jql.Build()
 	}
 }
 
 func BenchmarkJson2Sql_Generate_WithSanitizedSQLi(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		jql, _ := NewJson2Sql([]byte(jsonData), &Json2SqlConf{withSanitizedInjection: true})
+		jql, _ := NewJson2Sql([]byte(jsonData), &Json2SqlConf{WithSanitizedInjection: true})
 		jql.Generate()
 	}
 }
@@ -192,7 +192,7 @@ func BenchmarkJson2Sql_Generate_WithSanitizedSQLi(b *testing.B) {
 func BenchmarkJson2Sql_Union_BuildRaw_WithSanitizedSQLi(b *testing.B) {
 	var newData = "[" + jsonData + "," + jsonData + "]"
 	for i := 0; i < b.N; i++ {
-		jql, _ := NewJson2Sql([]byte(newData), &Json2SqlConf{withSanitizedInjection: true, withUnion: true})
+		jql, _ := NewJson2Sql([]byte(newData), &Json2SqlConf{WithSanitizedInjection: true, WithUnion: true})
 		jql.BuildUnion()
 	}
 }
@@ -200,7 +200,7 @@ func BenchmarkJson2Sql_Union_BuildRaw_WithSanitizedSQLi(b *testing.B) {
 func BenchmarkJson2Sql_Union_Generate_WithSanitizedSQLi(b *testing.B) {
 	var newData = "[" + jsonData + "," + jsonData + "]"
 	for i := 0; i < b.N; i++ {
-		jql, _ := NewJson2Sql([]byte(newData), &Json2SqlConf{withSanitizedInjection: true, withUnion: true})
+		jql, _ := NewJson2Sql([]byte(newData), &Json2SqlConf{WithSanitizedInjection: true, WithUnion: true})
 		jql.GenerateUnion()
 	}
 }
