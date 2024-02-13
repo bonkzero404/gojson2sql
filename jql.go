@@ -52,6 +52,12 @@ func cleanSpaces(input string) string {
 	return result
 }
 
+func cleanWhereCond(input string) string {
+	re := regexp.MustCompile(`(?i)where\s*and|where or`)
+	cleanedInput := re.ReplaceAllString(input, "WHERE")
+	return cleanedInput
+}
+
 func sanitizeInjection(input string) string {
 	re := regexp.MustCompile(`(?i)[;]|--|drop\s*table|@@\s*version|insert\s*into|if\s*\(|sleep\s*\(|"|\/\*|\*\/|\\0|\\'|\\"|\\b|\\n|\\r|\\t|\\Z|\\\\|\\%|\\_`)
 	cleanedInput := re.ReplaceAllString(input, "")
@@ -239,7 +245,7 @@ func (jql *Json2Sql) GenerateWhere() string {
 	var sql = ""
 
 	if jql.sqlJson.Conditions != nil {
-		sql += " WHERE " + jql.GenerateConditions(*jql.sqlJson.Conditions...)
+		sql += cleanWhereCond(" WHERE " + jql.GenerateConditions(*jql.sqlJson.Conditions...))
 	}
 
 	return sql

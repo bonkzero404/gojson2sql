@@ -377,6 +377,35 @@ func TestBetweenWithOperand(t *testing.T) {
 	assert.Equal(t, strings.TrimSpace(strExpected), strings.TrimSpace(str))
 }
 
+func TestWhereIs(t *testing.T) {
+	var sqlTest = `
+		{
+			"conditions": [
+				{
+          "operand": "or",
+					"clause": "a",
+					"datatype": "STRING",
+					"operator": "is not null",
+					"value": null
+				},
+				{
+          "operand": "and",
+					"clause": "b",
+					"datatype": "STRING",
+					"operator": "is null",
+					"value": null
+				}
+			]
+		}
+	`
+
+	strExpected := `WHERE a IS NOT NULL AND b IS NULL`
+	jql, _ := NewJson2Sql([]byte(sqlTest), &Json2SqlConf{})
+	str := jql.GenerateWhere()
+
+	assert.Equal(t, strings.TrimSpace(strExpected), strings.TrimSpace(str))
+}
+
 func TestCompositeWithoutOperand(t *testing.T) {
 	var sqlTest = `
 		{
