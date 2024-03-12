@@ -114,7 +114,7 @@ func (jql *Json2Sql) isStringNumeric(s string) bool {
 }
 
 func (jql *Json2Sql) MaskedQueryValue(query string) (string, []interface{}) {
-	sRegex := fmt.Sprintf(`%s'([^\s]+)'%s|%s([^\s]+)%s`, JQL_FLAG_OPEN, JQL_FLAG_CLOSE, JQL_FLAG_OPEN, JQL_FLAG_CLOSE)
+	sRegex := fmt.Sprintf(`%s(.*?)%s`, JQL_FLAG_OPEN, JQL_FLAG_CLOSE)
 	re := regexp.MustCompile(sRegex)
 	matches := re.FindAllStringSubmatch(query, -1)
 

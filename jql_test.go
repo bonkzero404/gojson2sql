@@ -1,6 +1,7 @@
 package gojson2sql
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -1076,6 +1077,96 @@ func TestGenerateJsonToSql(t *testing.T) {
 	strExpectation := "SELECT table_1.a, table_1.b AS foo_bar, (SELECT * FROM table_4 WHERE a = ? LIMIT 1) AS baz, table_2.b, table_3.a, table_3.b FROM table_1 JOIN table_2 ON table_2.a = table_1.a LEFT JOIN table_3 ON table_3.a = table_2.a WHERE table_1.a = ? AND table_1.b = ? AND table_2.a > sum(?) AND table_2.b = (SELECT * FROM table_4 WHERE a = ? LIMIT 1) OR (table_3.a BETWEEN ? AND ? AND table_3.b = ?) GROUP BY table_1.a HAVING COUNT(table_2.a) > ? ORDER BY table_1.a, table_2.a ASC LIMIT 1 OFFSET 0"
 	assert.Equal(t, strExpectation, sql)
 	assert.Equal(t, []interface{}{float64(1), "foo", true, float64(100), float64(1), "2020-01-01", "2023-01-01", "2", float64(10)}, filter)
+}
+
+func TestGenerateWithStaticCond(t *testing.T) {
+	jsonData := `
+		{
+      "table": "v_transaction_redemptions",
+      "selectFields": [
+        "v_transaction_redemptions.transaction_number",
+        "v_transaction_redemptions.customer_id",
+        "v_transaction_redemptions.customer_name",
+        "v_transaction_redemptions.amounts"
+      ],
+      "conditions": [
+        {
+            "operand": "and",
+            "clause": "v_transaction_redemptions.transaction_date",
+            "datatype": "STRING",
+            "isStatic": false,
+            "operator": "=",
+            "value": "2024-03-08 23:59:59"
+        },
+        {
+            "operand": "and",
+            "clause": "v_transaction_redemptions.customer_id",
+            "datatype": "STRING",
+            "isStatic": true,
+            "operator": "=",
+            "value": "15"
+        }
+    ]
+  }
+	`
+
+	jql, _ := NewJson2Sql([]byte(jsonData), &Json2SqlConf{})
+	sql, _, _ := jql.Generate()
+
+	fmt.Println(sql)
+
+	// strExpectation := "SELECT table_1.a, table_1.b AS foo_bar, (SELECT * FROM table_4 WHERE a = ? LIMIT 1) AS baz, table_2.b, table_3.a, table_3.b FROM table_1 JOIN table_2 ON table_2.a = table_1.a LEFT JOIN table_3 ON table_3.a = table_2.a WHERE table_1.a = ? AND table_1.b = ? AND table_2.a > sum(?) AND table_2.b = (SELECT * FROM table_4 WHERE a = ? LIMIT 1) OR (table_3.a BETWEEN ? AND ? AND table_3.b = ?) GROUP BY table_1.a HAVING COUNT(table_2.a) > ? ORDER BY table_1.a, table_2.a ASC LIMIT 1 OFFSET 0"
+	// assert.Equal(t, strExpectation, sql)
+	// assert.Equal(t, []interface{}{float64(1), "foo", true, float64(100), float64(1), "2020-01-01", "2023-01-01", "2", float64(10)}, filter)
+}
+
+func TestRawFunction(t *testing.T) {
+	jsonData := `
+	{
+    "selectFields": [
+      {
+        "alias": "amounts",
+        "addFunction": {
+          "sqlFunc": {
+            "name": "sum",
+            "isField": true,
+            "params": [
+              "v_transaction_redemptions.amounts"
+            ]
+          }
+        }
+      }
+    ],
+    "conditions": [
+      {
+        "isStatic": false,
+        "datatype": "raw",
+        "clause": "v_transaction_redemptions.transaction_date",
+        "operator": ">=",
+        "operand": "AND",
+        "value": "CURRENT_DATE - INTERVAL '3 months'"
+      },
+      {
+        "isStatic": false,
+        "datatype": "number",
+        "clause": "v_transaction_redemptions.customer_id",
+        "operator": "=",
+        "operand": "AND",
+        "value": 15
+      }
+    ],
+    "table": "v_transaction_redemptions"
+  }
+	`
+
+	jql, _ := NewJson2Sql([]byte(jsonData), &Json2SqlConf{WithSanitizedInjection: true})
+	sql, _, _ := jql.Generate()
+
+	fmt.Println(sql)
+
+	// strExpectation := "SELECT table_1.a, table_1.b AS foo_bar, (SELECT * FROM table_4 WHERE a = ? LIMIT 1) AS baz, table_2.b, table_3.a, table_3.b FROM table_1 JOIN table_2 ON table_2.a = table_1.a LEFT JOIN table_3 ON table_3.a = table_2.a WHERE table_1.a = ? AND table_1.b = ? AND table_2.a > sum(?) AND table_2.b = (SELECT * FROM table_4 WHERE a = ? LIMIT 1) OR (table_3.a BETWEEN ? AND ? AND table_3.b = ?) GROUP BY table_1.a HAVING COUNT(table_2.a) > ? ORDER BY table_1.a, table_2.a ASC LIMIT 1 OFFSET 0"
+	// assert.Equal(t, strExpectation, sql)
+	// assert.Equal(t, []interface{}{float64(1), "foo", true, float64(100), float64(1), "2020-01-01", "2023-01-01", "2", float64(10)}, filter)
 }
 
 func TestBuildRawUnion(t *testing.T) {
