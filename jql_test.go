@@ -1153,6 +1153,14 @@ func TestRawFunction(t *testing.T) {
         "operator": "=",
         "operand": "AND",
         "value": 15
+      },
+			{
+        "isStatic": true,
+        "datatype": "string",
+        "clause": "v_transaction_redemptions.customer_name",
+        "operator": "=",
+        "operand": "AND",
+        "value": "MAHMUD"
       }
     ],
     "table": "v_transaction_redemptions"
@@ -1160,9 +1168,13 @@ func TestRawFunction(t *testing.T) {
 	`
 
 	jql, _ := NewJson2Sql([]byte(jsonData), &Json2SqlConf{WithSanitizedInjection: true})
-	sql, _, _ := jql.Generate()
+	sql, par, _ := jql.Generate()
 
 	fmt.Println(sql)
+
+	for _, p := range par {
+		fmt.Println("PARAM ==>", p, reflect.TypeOf(p))
+	}
 
 	// strExpectation := "SELECT table_1.a, table_1.b AS foo_bar, (SELECT * FROM table_4 WHERE a = ? LIMIT 1) AS baz, table_2.b, table_3.a, table_3.b FROM table_1 JOIN table_2 ON table_2.a = table_1.a LEFT JOIN table_3 ON table_3.a = table_2.a WHERE table_1.a = ? AND table_1.b = ? AND table_2.a > sum(?) AND table_2.b = (SELECT * FROM table_4 WHERE a = ? LIMIT 1) OR (table_3.a BETWEEN ? AND ? AND table_3.b = ?) GROUP BY table_1.a HAVING COUNT(table_2.a) > ? ORDER BY table_1.a, table_2.a ASC LIMIT 1 OFFSET 0"
 	// assert.Equal(t, strExpectation, sql)

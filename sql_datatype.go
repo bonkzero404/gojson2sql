@@ -100,7 +100,10 @@ func ExtractValueByDataType(datatype SQLDataTypeEnum, value json.RawMessage, isS
 	switch datatype {
 	case String:
 		json.Unmarshal(value, &valueString)
-		return jqlFlagOpen + "'" + valueString + "'" + jqlFlagClose
+		if isStatic {
+			return jqlFlagOpen + "'" + valueString + "'" + jqlFlagClose
+		}
+		return jqlFlagOpen + valueString + jqlFlagClose
 	case Boolean:
 		var valueBool bool
 
@@ -112,7 +115,6 @@ func ExtractValueByDataType(datatype SQLDataTypeEnum, value json.RawMessage, isS
 		json.Unmarshal(value, &valueNumber)
 		return jqlFlagOpen + string(value) + jqlFlagClose
 	case Raw:
-		// fmt.Println("YAP", jqlFlagOpen+strings.Trim(string(value), `"`)+jqlFlagClose)
 		return jqlFlagOpen + strings.Trim(string(value), `"`) + jqlFlagClose
 	case Array:
 		return ArrayConversionToStringExpression(value, isStatic)
